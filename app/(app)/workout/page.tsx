@@ -1,8 +1,12 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/auth";
-import { getActiveWorkout, getRecentWorkouts } from "@/lib/data/workouts";
+import {
+  getActiveWorkout,
+  getOpenLoggedWorkouts,
+  getRecentWorkouts,
+} from "@/lib/data/workouts";
 import { muscleGroupLabel } from "@/lib/muscle-groups";
-import { formatDuration } from "@/lib/dates";
+import { formatDuration, formatShortDate, toInputDate } from "@/lib/dates";
 import { StartWorkoutForm } from "@/components/workout/start-workout-form";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -10,8 +14,9 @@ import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/ca
 
 export default async function WorkoutPage() {
   const user = await requireUser();
-  const [active, recent] = await Promise.all([
+  const [active, drafts, recent] = await Promise.all([
     getActiveWorkout(user.id),
+    getOpenLoggedWorkouts(user.id),
     getRecentWorkouts(user.id),
   ]);
 
@@ -21,8 +26,7 @@ export default async function WorkoutPage() {
         <p className="text-xs uppercase tracking-[0.22em] text-primary">Studio</p>
         <h1 className="mt-2 font-heading text-4xl">Workout</h1>
         <p className="mt-2 max-w-xl text-muted-foreground">
-          Built for the gym floor: large targets, one-handed set logging, and a
-          session that survives accidental navigation.
+          Start a live session, or log a past workout with its date and exercises.
         </p>
       </header>
 
@@ -41,9 +45,31 @@ export default async function WorkoutPage() {
             Resume workout
           </Button>
         </Card>
-      ) : (
-        <StartWorkoutForm />
-      )}
+      ) : null}
+
+      <StartWorkoutForm today={toInputDate()} />
+
+      {drafts.length > 0 ? (
+        <section className="space-y-3">
+          <h2 className="font-heading text-2xl">Unfinished logs</h2>
+          {drafts.map((workout) => (
+            <Link key={workout.id} href={`/workout/${workout.id}`} className="block">
+              <Card>
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="font-medium">{workout.title}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {formatShortDate(workout.date)} · {workout.exercises.length}{" "}
+                      exercises
+                    </p>
+                  </div>
+                  <span className="text-sm text-primary">Continue</span>
+                </div>
+              </Card>
+            </Link>
+          ))}
+        </section>
+      ) : null}
 
       <section className="space-y-3">
         <h2 className="font-heading text-2xl">Recent</h2>
@@ -59,7 +85,7 @@ export default async function WorkoutPage() {
                   <div>
                     <p className="font-medium">{workout.title}</p>
                     <p className="text-sm text-muted-foreground">
-                      {workout.date.toLocaleDateString()} ·{" "}
+                      {formatShortDate(workout.date)} ·{" "}
                       {formatDuration(workout.durationSeconds ?? 0)} ·{" "}
                       {workout.exercises.length} exercises
                     </p>

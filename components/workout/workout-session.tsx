@@ -9,6 +9,7 @@ import {
 } from "@/lib/actions/workouts";
 import { addSetAction } from "@/lib/actions/sets";
 import { removeWorkoutExerciseAction } from "@/lib/actions/exercises";
+import { formatShortDate } from "@/lib/dates";
 import { muscleGroupLabel } from "@/lib/muscle-groups";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -37,22 +38,27 @@ export function WorkoutSession({
   const [prMessage, setPrMessage] = useState<string | null>(null);
   const unit = weightUnit === "KG" ? "kg" : "lb";
   const isOpen = workout.status === "IN_PROGRESS";
+  const workoutDate = new Date(workout.date);
+  const isPastLog =
+    workoutDate.getTime() <
+    new Date(Date.UTC(new Date().getFullYear(), new Date().getMonth(), new Date().getDate())).getTime();
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-xs uppercase tracking-[0.2em] text-primary">
-            {isOpen ? "Live session" : "Completed"}
+            {isOpen ? (isPastLog ? "Past log" : "Live session") : "Completed"}
           </p>
           <h1 className="mt-1 font-heading text-4xl">{workout.title}</h1>
+          <p className="mt-2 text-sm text-muted-foreground">{formatShortDate(workoutDate)}</p>
           <div className="mt-3 flex flex-wrap gap-2">
             {workout.muscleGroups.map((group) => (
               <Badge key={group}>{muscleGroupLabel(group)}</Badge>
             ))}
           </div>
         </div>
-        {isOpen ? (
+        {isOpen && !isPastLog ? (
           <WorkoutTimer
             workoutId={workout.id}
             startedAt={workout.startedAt}
@@ -176,7 +182,7 @@ export function WorkoutSession({
                 })
               }
             >
-              Finish workout
+              {isPastLog ? "Save Workout" : "Finish Workout"}
             </Button>
             <Button
               className="min-h-12"

@@ -24,6 +24,10 @@ export const startWorkoutSchema = z.object({
   muscleGroups: z.array(muscleGroupSchema).min(1, "Choose at least one muscle group."),
   title: z.string().trim().max(80).optional(),
   notes: z.string().trim().max(500).optional(),
+  date: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Choose a valid date.")
+    .optional(),
 });
 
 export const workoutIdSchema = z.object({

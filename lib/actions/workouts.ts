@@ -1,21 +1,19 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import { PersonalRecordType, type MuscleGroup } from "@prisma/client";
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { toDateOnly } from "@/lib/dates";
+import { fromInputDate, isPastDate, toDateOnly } from "@/lib/dates";
 import { titleFromMuscleGroups } from "@/lib/muscle-groups";
 import { ActionError, toActionError, type ActionResult } from "@/lib/errors";
 import { estimatedOneRepMax, setVolume } from "@/lib/calculations/strength";
 import { getWorkoutForUser } from "@/lib/data/workouts";
+import { revalidateStudio } from "@/lib/revalidate";
 import { workoutElapsedSeconds } from "@/lib/workout-metrics";
 import { startWorkoutSchema, workoutIdSchema } from "@/lib/validations/workout";
 
 function refreshWorkout(workoutId: string) {
-  revalidatePath("/dashboard");
-  revalidatePath("/workout");
-  revalidatePath(`/workout/${workoutId}`);
+  revalidateStudio(workoutId);
 }
 
 async function ownedWorkout(userId: string, workoutId: string) {
@@ -36,12 +34,22 @@ export async function startWorkoutAction(
   try {
     const user = await requireUser();
     const data = startWorkoutSchema.parse(input);
-    const existing = await prisma.workout.findFirst({
-      where: { userId: user.id, status: "IN_PROGRESS" },
-    });
+    const date = data.date ? fromInputDate(data.date) : toDateOnly();
 
-    if (existing) {
-      return { ok: true, data: { workoutId: existing.id, resumed: true } };
+    if (date.getTime() > toDateOnly().getTime()) {
+      throw new ActionError("Choose today or a past date.");
+    }
+
+    const loggingPast = isPastDate(date);
+
+    if (!loggingPast) {
+      const existing = await prisma.workout.findFirst({
+        where: { userId: user.id, status: "IN_PROGRESS", date: toDateOnly() },
+      });
+
+      if (existing) {
+        return { ok: true, data: { workoutId: existing.id, resumed: true } };
+      }
     }
 
     const muscleGroups = data.muscleGroups as MuscleGroup[];
@@ -51,9 +59,9 @@ export async function startWorkoutAction(
         title: data.title?.trim() || titleFromMuscleGroups(muscleGroups),
         notes: data.notes,
         muscleGroups,
-        date: toDateOnly(),
+        date,
         status: "IN_PROGRESS",
-        startedAt: new Date(),
+        startedAt: loggingPast ? date : new Date(),
       },
     });
 

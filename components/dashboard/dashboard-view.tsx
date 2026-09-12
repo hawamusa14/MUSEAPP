@@ -63,7 +63,7 @@ export function DashboardView({
               ? `${Math.round(nutrition?.calories ?? 0)} / ${calorieTarget}`
               : `${Math.round(nutrition?.calories ?? 0)}`
           }
-          hint="Nutrition tracking is next"
+          hint="From today's meals"
         />
         <Metric
           label="Protein"
@@ -135,7 +135,7 @@ export function DashboardView({
           </CardHeader>
           <Progress value={weight ? 18 : 0} label="Goal progress" />
           <p className="mt-3 text-sm text-muted-foreground">
-            Weight goals and projections arrive in the next phase.
+            Set a weight goal on Goals to turn this into a trajectory.
           </p>
         </Card>
       </div>

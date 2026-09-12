@@ -25,8 +25,36 @@ export async function getWorkoutForUser(userId: string, workoutId: string) {
 
 export async function getActiveWorkout(userId: string) {
   return prisma.workout.findFirst({
-    where: { userId, status: "IN_PROGRESS" },
+    where: { userId, status: "IN_PROGRESS", date: toDateOnly() },
     include: workoutDetailInclude,
+  });
+}
+
+export async function getOpenLoggedWorkouts(userId: string) {
+  return prisma.workout.findMany({
+    where: {
+      userId,
+      status: "IN_PROGRESS",
+      date: { lt: toDateOnly() },
+    },
+    orderBy: { date: "desc" },
+    include: workoutDetailInclude,
+  });
+}
+
+export async function getWorkoutHistory(userId: string, take = 40) {
+  return prisma.workout.findMany({
+    where: { userId, status: { in: ["COMPLETED", "IN_PROGRESS"] } },
+    orderBy: [{ date: "desc" }, { createdAt: "desc" }],
+    take,
+    include: {
+      exercises: {
+        include: {
+          exercise: true,
+          sets: true,
+        },
+      },
+    },
   });
 }
 
