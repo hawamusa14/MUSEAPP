@@ -24,7 +24,7 @@ export default async function Home() {
           Fitness · Wellness · Intelligence
         </p>
         <h1 className="mt-6 font-heading text-5xl leading-tight text-foreground sm:text-7xl">
-          Your personal fitness world.
+          Your Personal Fitness World. You are your own MUSE
         </h1>
         <p className="mx-auto mt-6 max-w-xl text-lg leading-8 text-muted-foreground">
           A luxury wellness journal, a sophisticated workout studio, and a
@@ -34,11 +34,11 @@ export default async function Home() {
         <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
           <Show when="signed-out">
             <SignUpButton mode="redirect">
-              <Button size="lg">Begin your journal</Button>
+              <Button size="lg">Begin Your Journal</Button>
             </SignUpButton>
             <SignInButton mode="redirect">
               <Button variant="outline" size="lg">
-                I already have an account
+                I Already Have an Account
               </Button>
             </SignInButton>
           </Show>

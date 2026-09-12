@@ -8,7 +8,7 @@ export function AuthControls() {
     <div className="flex items-center gap-3">
       <Show when="signed-out">
         <SignInButton mode="redirect">
-          <Button variant="ghost">Sign in</Button>
+          <Button variant="ghost">Sign In</Button>
         </SignInButton>
         <SignUpButton mode="redirect">
           <Button>Join MUSE</Button>
