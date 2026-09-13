@@ -23,21 +23,30 @@ type DraftExercise = {
 export function PlanForm({
   date,
   plan,
+  presetCategoryId = "FULL_BODY",
   onClose,
 }: {
   date: string;
   plan?: PlanDTO | null;
+  presetCategoryId?: string;
   onClose: () => void;
 }) {
+  const startingCategory = plan
+    ? inferCategoryId(plan.kind, plan.muscleGroups)
+    : presetCategoryId;
+  const startingGroups =
+    plan?.muscleGroups ??
+    PLAN_CATEGORIES.find((item) => item.id === startingCategory)?.muscleGroups ??
+    ["FULL_BODY"];
+  const startingTitle =
+    plan?.title ?? PLAN_CATEGORIES.find((item) => item.id === startingCategory)?.label ?? "";
   const [pending, startTransition] = useTransition();
-  const [title, setTitle] = useState(plan?.title ?? "");
+  const [title, setTitle] = useState(startingTitle);
   const [day, setDay] = useState(plan?.date ?? date);
   const [startTime, setStartTime] = useState(plan?.startTime ?? "");
   const [endTime, setEndTime] = useState(plan?.endTime ?? "");
-  const [categoryId, setCategoryId] = useState(
-    plan ? inferCategoryId(plan.kind, plan.muscleGroups) : "LOWER_BODY"
-  );
-  const [groups, setGroups] = useState<MuscleGroup[]>(plan?.muscleGroups ?? ["LOWER_BODY"]);
+  const [categoryId, setCategoryId] = useState(startingCategory);
+  const [groups, setGroups] = useState<MuscleGroup[]>(startingGroups);
   const [notes, setNotes] = useState(plan?.notes ?? "");
   const [stepGoal, setStepGoal] = useState(plan?.stepGoal?.toString() ?? "");
   const [cardioMinutes, setCardioMinutes] = useState(plan?.cardioMinutes?.toString() ?? "");

@@ -64,3 +64,19 @@ export const journalSchema = z.object({
   stress: z.coerce.number().int().min(1).max(10).optional(),
   workoutNotes: z.string().trim().max(4000).optional(),
 });
+
+export const cardioSessionSchema = z.object({
+  date: dateSchema,
+  type: z.string().trim().min(1, "Name the activity.").max(40),
+  durationMin: z.coerce.number().min(1).max(600),
+  calories: z.coerce.number().int().min(0).max(5000).optional(),
+  notes: z.string().trim().max(400).optional(),
+});
+
+export const progressCheckInSchema = z.object({
+  date: dateSchema,
+  angle: z.enum(["FRONT", "SIDE", "BACK", "CUSTOM"]),
+  label: z.string().trim().max(40).optional(),
+  notes: z.string().trim().max(400).optional(),
+});
+

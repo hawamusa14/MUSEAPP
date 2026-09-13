@@ -397,6 +397,7 @@ export async function getCalendarHub(
     const dto = serializePlan(plan);
     mark.plans.push(dto);
     if (plan.status === "PLANNED") mark.hasPlanned = true;
+    if (plan.status === "COMPLETED") mark.hasCompletedWorkout = true;
     if (plan.kind === "REST") mark.hasRest = true;
     if (plan.kind === "CARDIO") mark.hasCardio = true;
   }

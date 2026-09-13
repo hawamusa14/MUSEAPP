@@ -12,6 +12,8 @@ import {
   movePlanAction,
   savePlanAsTemplateAction,
   skipPlanAction,
+  completeSelectedDayAction,
+  quickCreatePlanAction,
   startPlannedWorkoutAction,
 } from "@/lib/actions/plans";
 import {
@@ -25,6 +27,7 @@ import {
   type PlanDTO,
 } from "@/lib/planning";
 import { PlanForm } from "@/components/calendar/plan-form";
+import { DayLogSheet } from "@/components/calendar/day-logs";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -39,9 +42,18 @@ export function CalendarHub({ data }: { data: CalendarHubDTO }) {
   const [pending, startTransition] = useTransition();
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<PlanDTO | null>(null);
+  const [presetCategoryId, setPresetCategoryId] = useState("FULL_BODY");
+  const [sheet, setSheet] = useState<null | "nutrition" | "cardio" | "photo">(null);
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const selected = data.marks[data.selectedDay];
+  const dayLabel = prettyDate(data.selectedDay);
+
+  function openPlan(categoryId = "FULL_BODY") {
+    setEditing(null);
+    setPresetCategoryId(categoryId);
+    setFormOpen(true);
+  }
 
   function href(next: Partial<{ view: string; month: string; week: string; day: string }>) {
     const params = new URLSearchParams({
@@ -60,6 +72,7 @@ export function CalendarHub({ data }: { data: CalendarHubDTO }) {
 
   function run(action: () => Promise<{ ok: true; data?: unknown } | { ok: false; error: string }>, success?: string) {
     startTransition(async () => {
+      setError(null);
       const result = await action();
       if (!result.ok) {
         setError(result.error);
@@ -87,13 +100,7 @@ export function CalendarHub({ data }: { data: CalendarHubDTO }) {
           <Button variant={data.view === "week" ? "default" : "outline"} render={<Link href={href({ view: "week" })} />}>
             Week
           </Button>
-          <Button
-            className="min-h-11"
-            onClick={() => {
-              setEditing(null);
-              setFormOpen(true);
-            }}
-          >
+          <Button className="min-h-11" onClick={() => openPlan("FULL_BODY")}>
             Plan workout
           </Button>
         </div>
@@ -141,7 +148,7 @@ export function CalendarHub({ data }: { data: CalendarHubDTO }) {
           <div>
             <CardTitle>{data.view === "week" ? data.weekLabel : data.monthLabel}</CardTitle>
             <CardDescription>
-              Outlined days are planned. Completed days carry a check. On a phone, the week stacks as daily cards; on a larger screen you can drag a workout to another day.
+              Select a day, then tap what you want to add. On a larger screen, drag a workout onto another day.
             </CardDescription>
           </div>
           <div className="flex gap-2">
@@ -166,14 +173,57 @@ export function CalendarHub({ data }: { data: CalendarHubDTO }) {
             )}
           </div>
         </CardHeader>
-        <p className="mb-4 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-muted-foreground">
-          <span className="inline-flex items-center gap-1.5"><span className="size-2 rounded-full border border-primary/70" /> Planned</span>
-          <span className="inline-flex items-center gap-1.5">✓ Completed</span>
-          <span className="inline-flex items-center gap-1.5">☁️ Rest</span>
-          <span className="inline-flex items-center gap-1.5">🔥 Cardio</span>
-          <span className="inline-flex items-center gap-1.5"><span className="size-2 rounded-full bg-primary/40" /> Nutrition</span>
-          <span className="inline-flex items-center gap-1.5">📷 Photo</span>
-        </p>
+        <div className="mb-4 space-y-2">
+          <p className="text-xs text-muted-foreground">Add to {dayLabel}</p>
+          <div className="flex flex-wrap gap-2">
+            <ActionChip
+              label="Plan"
+              hint="Add a workout"
+              active={Boolean(selected?.hasPlanned)}
+              disabled={pending}
+              onClick={() => openPlan("FULL_BODY")}
+            />
+            <ActionChip
+              label="✓ Complete"
+              hint="Mark planned sessions done"
+              active={Boolean(selected?.hasCompletedWorkout)}
+              disabled={pending}
+              onClick={() =>
+                run(() => completeSelectedDayAction({ date: data.selectedDay }), "Marked complete")
+              }
+            />
+            <ActionChip
+              label="☁️ Rest"
+              hint="Add a rest day"
+              active={Boolean(selected?.hasRest)}
+              disabled={pending}
+              onClick={() =>
+                run(() => quickCreatePlanAction({ date: data.selectedDay, kind: "REST" }), "Rest day added")
+              }
+            />
+            <ActionChip
+              label="🔥 Cardio"
+              hint="Plan or log cardio"
+              active={Boolean(selected?.hasCardio)}
+              disabled={pending}
+              onClick={() => setSheet("cardio")}
+            />
+            <ActionChip
+              label="Nutrition"
+              hint="Log a meal"
+              active={Boolean(selected?.hasNutrition)}
+              disabled={pending}
+              onClick={() => setSheet("nutrition")}
+            />
+            <ActionChip
+              label="📷 Photo"
+              hint="Save a check-in"
+              active={Boolean(selected?.hasPhoto)}
+              disabled={pending}
+              onClick={() => setSheet("photo")}
+            />
+          </div>
+        </div>
         {data.view === "week" ? (
           <WeekBoard
             data={data}
@@ -191,10 +241,13 @@ export function CalendarHub({ data }: { data: CalendarHubDTO }) {
         data={data}
         selected={selected}
         pending={pending}
-        onCreate={() => {
-          setEditing(null);
-          setFormOpen(true);
-        }}
+        onCreate={() => openPlan("FULL_BODY")}
+        onLogNutrition={() => setSheet("nutrition")}
+        onLogCardio={() => setSheet("cardio")}
+        onLogPhoto={() => setSheet("photo")}
+        onAddRest={() =>
+          run(() => quickCreatePlanAction({ date: data.selectedDay, kind: "REST" }), "Rest day added")
+        }
         onEdit={(plan) => {
           setEditing(plan);
           setFormOpen(true);
@@ -311,8 +364,10 @@ export function CalendarHub({ data }: { data: CalendarHubDTO }) {
 
       {formOpen ? (
         <PlanForm
+          key={editing?.id ?? `new-${presetCategoryId}-${data.selectedDay}`}
           date={data.selectedDay}
           plan={editing}
+          presetCategoryId={presetCategoryId}
           onClose={() => {
             setFormOpen(false);
             setEditing(null);
@@ -320,7 +375,51 @@ export function CalendarHub({ data }: { data: CalendarHubDTO }) {
           }}
         />
       ) : null}
+
+      {sheet ? (
+        <DayLogSheet
+          kind={sheet}
+          date={data.selectedDay}
+          onClose={() => setSheet(null)}
+          onSaved={(message) => {
+            notice(message);
+            router.refresh();
+          }}
+        />
+      ) : null}
     </div>
+  );
+}
+
+function ActionChip({
+  label,
+  hint,
+  active,
+  disabled,
+  onClick,
+}: {
+  label: string;
+  hint: string;
+  active?: boolean;
+  disabled?: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      title={hint}
+      disabled={disabled}
+      onClick={onClick}
+      className={cn(
+        "inline-flex min-h-11 items-center gap-1.5 rounded-full border px-3 text-sm transition-colors",
+        active
+          ? "border-primary bg-primary/10 text-foreground"
+          : "border-border bg-background hover:bg-accent",
+        disabled ? "opacity-50" : ""
+      )}
+    >
+      {label}
+    </button>
   );
 }
 
@@ -485,6 +584,10 @@ function DayPanel({
   onDelete,
   onTemplate,
   onMove,
+  onLogNutrition,
+  onLogCardio,
+  onLogPhoto,
+  onAddRest,
 }: {
   data: CalendarHubDTO;
   selected?: CalendarHubDTO["marks"][string];
@@ -497,6 +600,10 @@ function DayPanel({
   onDelete: (planId: string, scope?: "one" | "future") => void;
   onTemplate: (planId: string) => void;
   onMove: (planId: string, date: string) => void;
+  onLogNutrition: () => void;
+  onLogCardio: () => void;
+  onLogPhoto: () => void;
+  onAddRest: () => void;
 }) {
   const day = data.day;
   const label = useMemo(() => prettyDate(day.date), [day.date]);
@@ -516,7 +623,20 @@ function DayPanel({
           </Button>
         </div>
         {day.plans.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Nothing planned. Add a session, a walk, or a rest day.</p>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">Nothing planned yet. Add what this day should hold.</p>
+            <div className="flex flex-wrap gap-2">
+              <Button variant="outline" className="min-h-11" onClick={onCreate}>
+                Plan workout
+              </Button>
+              <Button variant="outline" className="min-h-11" disabled={pending} onClick={onAddRest}>
+                Rest day
+              </Button>
+              <Button variant="outline" className="min-h-11" onClick={onLogCardio}>
+                Cardio
+              </Button>
+            </div>
+          </div>
         ) : (
           day.plans.map((plan) => (
             <article
@@ -611,7 +731,7 @@ function DayPanel({
             value={Math.min(100, ((day.steps ?? 0) / Math.max(day.stepGoal, 1)) * 100)}
             label="Steps"
           />
-          <p className="mt-3 text-sm">Active calories: {day.activeCalories ?? "—"}</p>
+          <p className="mt-3 text-sm">Active calories: {day.activeCalories != null ? day.activeCalories : "—"}</p>
           <p className="text-sm">
             Cardio:{" "}
             {day.cardio.length
@@ -620,6 +740,9 @@ function DayPanel({
                 ? "Planned"
                 : "—"}
           </p>
+          <Button variant="outline" className="mt-3 min-h-11" onClick={onLogCardio}>
+            Log cardio
+          </Button>
         </div>
         <div>
           <h3 className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Nutrition</h3>
@@ -653,6 +776,9 @@ function DayPanel({
             Fat: {Math.round(day.nutrition?.fat ?? 0)}g
             {day.fatTarget ? ` / ${day.fatTarget}g` : ""}
           </p>
+          <Button variant="outline" className="mt-3 min-h-11" onClick={onLogNutrition}>
+            Log meal
+          </Button>
         </div>
       </section>
 
@@ -667,9 +793,16 @@ function DayPanel({
             </p>
           ))
         )}
-        {day.photoCount > 0 ? (
-          <p className="mt-3 text-sm">📷 {day.photoCount} progress photo{day.photoCount === 1 ? "" : "s"}</p>
-        ) : null}
+        <div className="mt-3 flex flex-wrap items-center gap-3">
+          {day.photoCount > 0 ? (
+            <p className="text-sm">📷 {day.photoCount} progress photo{day.photoCount === 1 ? "" : "s"}</p>
+          ) : (
+            <p className="text-sm text-muted-foreground">No check-in photos yet.</p>
+          )}
+          <Button variant="outline" className="min-h-11" onClick={onLogPhoto}>
+            Add check-in
+          </Button>
+        </div>
         {day.workouts.length > 0 ? (
           <div className="mt-4 space-y-2">
             {day.workouts.map((workout) => (

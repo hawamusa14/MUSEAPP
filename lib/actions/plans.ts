@@ -11,10 +11,12 @@ import { canStartPlannedWorkout, expandPlannedSets } from "@/lib/planning";
 import {
   applyProposedScheduleSchema,
   applyTemplateSchema,
+  completeDaySchema,
   deletePlanSchema,
   deleteRecurringSchema,
   movePlanSchema,
   planIdSchema,
+  quickCreatePlanSchema,
   saveTemplateSchema,
   templateIdSchema,
   upsertPlanSchema,
@@ -629,6 +631,67 @@ export async function skipPlanAction(input: unknown): Promise<ActionResult> {
     return {
       ok: false,
       error: toActionError(error, "Unable to skip that workout."),
+    };
+  }
+}
+
+export async function quickCreatePlanAction(
+  input: unknown
+): Promise<ActionResult<{ planId: string }>> {
+  try {
+    const user = await requireUser();
+    const data = quickCreatePlanSchema.parse(input);
+    const date = fromInputDate(data.date);
+    const existing = await prisma.plannedWorkout.findFirst({
+      where: { userId: user.id, date, kind: data.kind, status: { not: "SKIPPED" } },
+    });
+    if (existing) {
+      const labels = { REST: "a rest day", CARDIO: "cardio", CHECK_IN: "a check-in" };
+      throw new ActionError(`This day already has ${labels[data.kind]}.`);
+    }
+    const titles = { REST: "Rest Day", CARDIO: "Cardio", CHECK_IN: "Progress check-in" };
+    const groups = { REST: [], CARDIO: ["CARDIO"] as MuscleGroup[], CHECK_IN: [] };
+    const created = await prisma.plannedWorkout.create({
+      data: {
+        userId: user.id,
+        title: data.title?.trim() || titles[data.kind],
+        date,
+        kind: data.kind,
+        muscleGroups: groups[data.kind],
+        cardioMinutes: data.kind === "CARDIO" ? data.cardioMinutes || 30 : null,
+      },
+    });
+    refreshPlans();
+    return { ok: true, data: { planId: created.id } };
+  } catch (error) {
+    return {
+      ok: false,
+      error: toActionError(error, "Unable to add that to the calendar."),
+    };
+  }
+}
+
+export async function completeSelectedDayAction(input: unknown): Promise<ActionResult> {
+  try {
+    const user = await requireUser();
+    const data = completeDaySchema.parse(input);
+    const date = fromInputDate(data.date);
+    const open = await prisma.plannedWorkout.findMany({
+      where: { userId: user.id, date, status: "PLANNED" },
+    });
+    if (open.length === 0) {
+      throw new ActionError("Nothing planned to complete on this day. Add a session first.");
+    }
+    await prisma.plannedWorkout.updateMany({
+      where: { id: { in: open.map((plan) => plan.id) } },
+      data: { status: "COMPLETED" },
+    });
+    refreshPlans();
+    return { ok: true, data: undefined };
+  } catch (error) {
+    return {
+      ok: false,
+      error: toActionError(error, "Unable to mark that day complete."),
     };
   }
 }

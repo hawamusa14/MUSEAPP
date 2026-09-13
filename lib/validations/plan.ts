@@ -124,3 +124,15 @@ export const applyProposedScheduleSchema = z.object({
 export const coachQuestionSchema = z.object({
   question: z.string().trim().min(2, "Ask a question.").max(500),
 });
+
+export const quickCreatePlanSchema = z.object({
+  date: dateSchema,
+  kind: z.enum(["REST", "CARDIO", "CHECK_IN"]),
+  title: z.string().trim().max(80).optional(),
+  cardioMinutes: z.number().min(0).max(600).optional(),
+});
+
+export const completeDaySchema = z.object({
+  date: dateSchema,
+});
+

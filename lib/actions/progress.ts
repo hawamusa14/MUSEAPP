@@ -6,7 +6,9 @@ import { fromInputDate } from "@/lib/dates";
 import { toActionError, type ActionResult } from "@/lib/errors";
 import { revalidateStudio } from "@/lib/revalidate";
 import {
+  cardioSessionSchema,
   measurementSchema,
+  progressCheckInSchema,
   stepEntrySchema,
   weightEntrySchema,
 } from "@/lib/validations/studio";
@@ -68,5 +70,49 @@ export async function addStepsAction(input: unknown): Promise<ActionResult> {
     return { ok: true, data: undefined };
   } catch (error) {
     return { ok: false, error: toActionError(error, "Unable to save steps.") };
+  }
+}
+
+export async function addCardioAction(input: unknown): Promise<ActionResult> {
+  try {
+    const user = await requireUser();
+    const data = cardioSessionSchema.parse(input);
+    const date = fromInputDate(data.date);
+    await prisma.cardioSession.create({
+      data: {
+        userId: user.id,
+        date,
+        type: data.type,
+        durationMin: data.durationMin,
+        calories: data.calories,
+        notes: data.notes,
+      },
+    });
+    revalidateStudio("/progress", "/dashboard", "/analytics", "/calendar", "/history");
+    return { ok: true, data: undefined };
+  } catch (error) {
+    return { ok: false, error: toActionError(error, "Unable to save that cardio session.") };
+  }
+}
+
+export async function addProgressCheckInAction(input: unknown): Promise<ActionResult> {
+  try {
+    const user = await requireUser();
+    const data = progressCheckInSchema.parse(input);
+    const date = fromInputDate(data.date);
+    await prisma.progressPhoto.create({
+      data: {
+        userId: user.id,
+        date,
+        angle: data.angle,
+        label: data.label || null,
+        notes: data.notes || null,
+        url: "logged://progress",
+      },
+    });
+    revalidateStudio("/progress", "/dashboard", "/analytics", "/calendar", "/history");
+    return { ok: true, data: undefined };
+  } catch (error) {
+    return { ok: false, error: toActionError(error, "Unable to save that check-in.") };
   }
 }
