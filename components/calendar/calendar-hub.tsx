@@ -35,6 +35,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { TitleEditor } from "@/components/ui/title-editor";
 import { DeleteWorkoutButton } from "@/components/workout/delete-workout-button";
+import { MealEntryList } from "@/components/studio/meal-entry-list";
 import { titleCaseName } from "@/lib/names";
 import { cn } from "@/lib/utils";
 
@@ -797,6 +798,11 @@ function DayPanel({
           <Button variant="outline" className="mt-3 min-h-11" onClick={onLogNutrition}>
             Log meal
           </Button>
+          {day.meals.length > 0 ? (
+            <div className="mt-4">
+              <MealEntryList meals={day.meals} />
+            </div>
+          ) : null}
         </div>
       </section>
 

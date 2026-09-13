@@ -177,6 +177,16 @@ export type DayDetailDTO = {
     carbs: number;
     fat: number;
   } | null;
+  meals: {
+    id: string;
+    date: string;
+    mealType: "BREAKFAST" | "LUNCH" | "DINNER" | "SNACK";
+    foodName: string;
+    calories: number;
+    protein: number;
+    carbs: number;
+    fat: number;
+  }[];
   calorieTarget: number | null;
   proteinTarget: number | null;
   carbsTarget: number | null;

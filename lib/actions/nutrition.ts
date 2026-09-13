@@ -3,9 +3,17 @@
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { fromInputDate } from "@/lib/dates";
-import { toActionError, type ActionResult } from "@/lib/errors";
+import { ActionError, toActionError, type ActionResult } from "@/lib/errors";
 import { revalidateStudio } from "@/lib/revalidate";
-import { nutritionEntrySchema, waterSchema } from "@/lib/validations/studio";
+import {
+  logSavedMealSchema,
+  nutritionEntryIdSchema,
+  nutritionEntrySchema,
+  savedMealIdSchema,
+  savedMealSchema,
+  updateNutritionEntrySchema,
+  waterSchema,
+} from "@/lib/validations/studio";
 
 async function nutritionTargets(userId: string) {
   const settings = await prisma.userSettings.findUnique({ where: { userId } });
@@ -57,14 +65,28 @@ export async function addNutritionEntryAction(input: unknown): Promise<ActionRes
         mealType: data.mealType,
         foodName: data.foodName,
         calories: data.calories,
-        protein: data.protein ?? 0,
-        carbs: data.carbs ?? 0,
-        fat: data.fat ?? 0,
+        protein: data.protein || 0,
+        carbs: data.carbs || 0,
+        fat: data.fat || 0,
       },
     });
 
+    if (data.saveAsPreset) {
+      await prisma.savedMeal.create({
+        data: {
+          userId: user.id,
+          name: data.foodName,
+          mealType: data.mealType,
+          calories: data.calories,
+          protein: data.protein || 0,
+          carbs: data.carbs || 0,
+          fat: data.fat || 0,
+        },
+      });
+    }
+
     await syncDaily(user.id, date);
-    revalidateStudio("/nutrition", "/dashboard", "/calendar");
+    revalidateStudio("/nutrition", "/dashboard", "/calendar", "/history");
     return { ok: true, data: undefined };
   } catch (error) {
     return { ok: false, error: toActionError(error, "Unable to save that meal.") };
@@ -98,3 +120,133 @@ export async function saveWaterAction(input: unknown): Promise<ActionResult> {
     return { ok: false, error: toActionError(error, "Unable to save water.") };
   }
 }
+
+export async function updateNutritionEntryAction(input: unknown): Promise<ActionResult> {
+  try {
+    const user = await requireUser();
+    const data = updateNutritionEntrySchema.parse(input);
+    const existing = await prisma.nutritionEntry.findFirst({
+      where: { id: data.entryId, userId: user.id },
+    });
+    if (!existing) throw new ActionError("That meal is no longer available.");
+
+    const nextDate = fromInputDate(data.date);
+    await prisma.nutritionEntry.update({
+      where: { id: existing.id },
+      data: {
+        date: nextDate,
+        mealType: data.mealType,
+        foodName: data.foodName,
+        calories: data.calories,
+        protein: data.protein || 0,
+        carbs: data.carbs || 0,
+        fat: data.fat || 0,
+      },
+    });
+
+    await syncDaily(user.id, existing.date);
+    if (existing.date.getTime() !== nextDate.getTime()) {
+      await syncDaily(user.id, nextDate);
+    }
+    revalidateStudio("/nutrition", "/dashboard", "/calendar", "/history");
+    return { ok: true, data: undefined };
+  } catch (error) {
+    return { ok: false, error: toActionError(error, "Unable to update that meal.") };
+  }
+}
+
+export async function deleteNutritionEntryAction(input: unknown): Promise<ActionResult> {
+  try {
+    const user = await requireUser();
+    const { entryId } = nutritionEntryIdSchema.parse(input);
+    const existing = await prisma.nutritionEntry.findFirst({
+      where: { id: entryId, userId: user.id },
+    });
+    if (!existing) throw new ActionError("That meal is no longer available.");
+
+    await prisma.nutritionEntry.delete({ where: { id: existing.id } });
+    await syncDaily(user.id, existing.date);
+    revalidateStudio("/nutrition", "/dashboard", "/calendar", "/history");
+    return { ok: true, data: undefined };
+  } catch (error) {
+    return { ok: false, error: toActionError(error, "Unable to remove that meal.") };
+  }
+}
+
+export async function upsertSavedMealAction(input: unknown): Promise<ActionResult> {
+  try {
+    const user = await requireUser();
+    const data = savedMealSchema.parse(input);
+    const payload = {
+      name: data.name,
+      mealType: data.mealType,
+      calories: data.calories,
+      protein: data.protein || 0,
+      carbs: data.carbs || 0,
+      fat: data.fat || 0,
+    };
+    if (data.id) {
+      const existing = await prisma.savedMeal.findFirst({
+        where: { id: data.id, userId: user.id },
+      });
+      if (!existing) throw new ActionError("That saved meal is no longer available.");
+      await prisma.savedMeal.update({
+        where: { id: existing.id },
+        data: payload,
+      });
+    } else {
+      await prisma.savedMeal.create({
+        data: { userId: user.id, ...payload },
+      });
+    }
+    revalidateStudio("/nutrition", "/calendar");
+    return { ok: true, data: undefined };
+  } catch (error) {
+    return { ok: false, error: toActionError(error, "Unable to save that meal.") };
+  }
+}
+
+export async function deleteSavedMealAction(input: unknown): Promise<ActionResult> {
+  try {
+    const user = await requireUser();
+    const { savedMealId } = savedMealIdSchema.parse(input);
+    await prisma.savedMeal.deleteMany({
+      where: { id: savedMealId, userId: user.id },
+    });
+    revalidateStudio("/nutrition", "/calendar");
+    return { ok: true, data: undefined };
+  } catch (error) {
+    return { ok: false, error: toActionError(error, "Unable to remove that saved meal.") };
+  }
+}
+
+export async function logSavedMealAction(input: unknown): Promise<ActionResult> {
+  try {
+    const user = await requireUser();
+    const data = logSavedMealSchema.parse(input);
+    const saved = await prisma.savedMeal.findFirst({
+      where: { id: data.savedMealId, userId: user.id },
+    });
+    if (!saved) throw new ActionError("That saved meal is no longer available.");
+
+    const date = fromInputDate(data.date);
+    await prisma.nutritionEntry.create({
+      data: {
+        userId: user.id,
+        date,
+        mealType: data.mealType || saved.mealType,
+        foodName: saved.name,
+        calories: saved.calories,
+        protein: saved.protein,
+        carbs: saved.carbs,
+        fat: saved.fat,
+      },
+    });
+    await syncDaily(user.id, date);
+    revalidateStudio("/nutrition", "/dashboard", "/calendar", "/history");
+    return { ok: true, data: undefined };
+  } catch (error) {
+    return { ok: false, error: toActionError(error, "Unable to log that saved meal.") };
+  }
+}
+

@@ -152,6 +152,7 @@ model User {
   workouts         Workout[]
   customExercises  Exercise[]
   nutritionEntries NutritionEntry[]
+  savedMeals       SavedMeal[]
   dailyNutrition   DailyNutrition[]
   cardioSessions   CardioSession[]
   stepEntries      StepEntry[]
@@ -372,6 +373,22 @@ model NutritionEntry {
   updatedAt   DateTime  @updatedAt
 
   @@index([userId, date])
+}
+
+model SavedMeal {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  mealType  MealType @default(SNACK)
+  calories  Float
+  protein   Float    @default(0)
+  carbs     Float    @default(0)
+  fat       Float    @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
 }
 
 model DailyNutrition {

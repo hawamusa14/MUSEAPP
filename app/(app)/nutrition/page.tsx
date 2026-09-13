@@ -2,15 +2,10 @@ import { requireUser } from "@/lib/auth";
 import { getNutritionPage } from "@/lib/data/studio";
 import { formatShortDate, toInputDate } from "@/lib/dates";
 import { NutritionForm } from "@/components/studio/nutrition-form";
+import { MealEntryList } from "@/components/studio/meal-entry-list";
+import { SavedMeals } from "@/components/studio/saved-meals";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-
-const mealLabels = {
-  BREAKFAST: "Breakfast",
-  LUNCH: "Lunch",
-  DINNER: "Dinner",
-  SNACK: "Snack",
-};
 
 export default async function NutritionPage() {
   const user = await requireUser();
@@ -19,6 +14,7 @@ export default async function NutritionPage() {
   const protein = data.daily?.protein ?? 0;
   const calorieTarget = user.settings?.calorieTarget ?? 0;
   const proteinTarget = user.settings?.proteinTarget ?? 0;
+  const today = toInputDate();
 
   return (
     <div className="mx-auto max-w-4xl space-y-8">
@@ -26,7 +22,7 @@ export default async function NutritionPage() {
         <p className="text-xs uppercase tracking-[0.22em] text-primary">Nourish</p>
         <h1 className="mt-2 font-heading text-4xl">Nutrition</h1>
         <p className="mt-2 text-muted-foreground">
-          Log meals and water. Totals appear on your dashboard and calendar.
+          Log meals, edit what you already saved, and keep snacks you repeat.
         </p>
       </header>
 
@@ -53,31 +49,33 @@ export default async function NutritionPage() {
         </Card>
       </div>
 
-      <NutritionForm today={toInputDate()} waterMl={data.daily?.waterMl ?? 0} />
+      <NutritionForm today={today} waterMl={data.daily?.waterMl ?? 0} />
 
       <Card>
         <CardHeader>
           <CardTitle>Today</CardTitle>
           <CardDescription>{formatShortDate(data.date)}</CardDescription>
         </CardHeader>
-        {data.meals.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No meals logged yet.</p>
-        ) : (
-          <div className="space-y-3">
-            {data.meals.map((meal) => (
-              <div key={meal.id} className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="font-medium">{meal.foodName}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {mealLabels[meal.mealType]} · {Math.round(meal.protein)}g protein
-                  </p>
-                </div>
-                <p className="text-sm">{Math.round(meal.calories)} cal</p>
-              </div>
-            ))}
-          </div>
-        )}
+        <MealEntryList meals={data.meals} />
       </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Saved meals and snacks</CardTitle>
+          <CardDescription>Reuse a favorite, change the macros, or delete it.</CardDescription>
+        </CardHeader>
+        <SavedMeals meals={data.savedMeals} today={today} />
+      </Card>
+
+      {data.logged.length > 0 ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Logged meals</CardTitle>
+            <CardDescription>Change or remove anything already submitted.</CardDescription>
+          </CardHeader>
+          <MealEntryList meals={data.logged} showDate />
+        </Card>
+      ) : null}
 
       {data.recent.length > 0 ? (
         <Card>

@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { titleCaseName } from "@/lib/names";
-import { fromInputDate, monthGrid, parseMonthKey, toDateOnly } from "@/lib/dates";
+import { dateKey, fromInputDate, monthGrid, parseMonthKey, toDateOnly } from "@/lib/dates";
 import { completionRatio } from "@/lib/calculations/progress";
 
 export async function getMonthStudio(userId: string, month?: string) {
@@ -77,12 +77,39 @@ export async function getDayStudio(userId: string, day: string) {
   return { date, workouts, meals, journal, weight };
 }
 
+function serializeMeal(entry: {
+  id: string;
+  date: Date;
+  mealType: "BREAKFAST" | "LUNCH" | "DINNER" | "SNACK";
+  foodName: string;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+}) {
+  return {
+    id: entry.id,
+    date: dateKey(entry.date),
+    mealType: entry.mealType,
+    foodName: entry.foodName,
+    calories: entry.calories,
+    protein: entry.protein,
+    carbs: entry.carbs,
+    fat: entry.fat,
+  };
+}
+
 export async function getNutritionPage(userId: string) {
   const date = toDateOnly();
-  const [meals, daily, recent] = await Promise.all([
+  const [meals, logged, daily, recent, savedMeals] = await Promise.all([
     prisma.nutritionEntry.findMany({
       where: { userId, date },
       orderBy: { createdAt: "desc" },
+    }),
+    prisma.nutritionEntry.findMany({
+      where: { userId },
+      orderBy: [{ date: "desc" }, { createdAt: "desc" }],
+      take: 24,
     }),
     prisma.dailyNutrition.findFirst({ where: { userId, date } }),
     prisma.dailyNutrition.findMany({
@@ -90,9 +117,28 @@ export async function getNutritionPage(userId: string) {
       orderBy: { date: "desc" },
       take: 8,
     }),
+    prisma.savedMeal.findMany({
+      where: { userId },
+      orderBy: { updatedAt: "desc" },
+    }),
   ]);
 
-  return { date, meals, daily, recent };
+  return {
+    date,
+    meals: meals.map(serializeMeal),
+    logged: logged.filter((item) => dateKey(item.date) !== dateKey(date)).map(serializeMeal),
+    daily,
+    recent,
+    savedMeals: savedMeals.map((item) => ({
+      id: item.id,
+      name: item.name,
+      mealType: item.mealType,
+      calories: item.calories,
+      protein: item.protein,
+      carbs: item.carbs,
+      fat: item.fat,
+    })),
+  };
 }
 
 export async function getProgressPage(userId: string) {

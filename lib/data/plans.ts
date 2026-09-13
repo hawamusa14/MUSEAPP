@@ -242,7 +242,7 @@ export async function ensureUpcomingRecurring(userId: string) {
 
 export async function getDayHub(userId: string, day: string): Promise<DayDetailDTO> {
   const date = fromInputDate(day);
-  const [plans, workouts, daily, journal, steps, cardio, photos, settings] =
+  const [plans, workouts, daily, meals, journal, steps, cardio, photos, settings] =
     await Promise.all([
       prisma.plannedWorkout.findMany({
         where: { userId, date },
@@ -254,6 +254,10 @@ export async function getDayHub(userId: string, day: string): Promise<DayDetailD
         include: { exercises: true },
       }),
       prisma.dailyNutrition.findFirst({ where: { userId, date } }),
+      prisma.nutritionEntry.findMany({
+        where: { userId, date },
+        orderBy: { createdAt: "desc" },
+      }),
       prisma.journalEntry.findMany({
         where: { userId, date },
         orderBy: { createdAt: "desc" },
@@ -303,6 +307,16 @@ export async function getDayHub(userId: string, day: string): Promise<DayDetailD
     proteinTarget: daily?.proteinTarget ?? settings?.proteinTarget ?? null,
     carbsTarget: daily?.carbsTarget ?? settings?.carbsTarget ?? null,
     fatTarget: daily?.fatTarget ?? settings?.fatTarget ?? null,
+    meals: meals.map((item) => ({
+      id: item.id,
+      date: dateKey(item.date),
+      mealType: item.mealType,
+      foodName: item.foodName,
+      calories: item.calories,
+      protein: item.protein,
+      carbs: item.carbs,
+      fat: item.fat,
+    })),
     notes,
     photoCount: photos,
   };

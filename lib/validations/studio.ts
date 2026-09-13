@@ -2,14 +2,45 @@ import { z } from "zod";
 
 const dateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Choose a valid date.");
 
+export const mealTypeSchema = z.enum(["BREAKFAST", "LUNCH", "DINNER", "SNACK"]);
+
 export const nutritionEntrySchema = z.object({
   date: dateSchema,
-  mealType: z.enum(["BREAKFAST", "LUNCH", "DINNER", "SNACK"]),
+  mealType: mealTypeSchema,
   foodName: z.string().trim().min(1, "Name the food.").max(80),
   calories: z.coerce.number().min(0).max(5000),
   protein: z.coerce.number().min(0).max(500).optional(),
   carbs: z.coerce.number().min(0).max(800).optional(),
   fat: z.coerce.number().min(0).max(400).optional(),
+  saveAsPreset: z.boolean().optional(),
+});
+
+export const updateNutritionEntrySchema = nutritionEntrySchema.extend({
+  entryId: z.string().min(1),
+}).omit({ saveAsPreset: true });
+
+export const nutritionEntryIdSchema = z.object({
+  entryId: z.string().min(1),
+});
+
+export const savedMealSchema = z.object({
+  id: z.string().min(1).optional(),
+  name: z.string().trim().min(1, "Name the meal.").max(80),
+  mealType: mealTypeSchema,
+  calories: z.coerce.number().min(0).max(5000),
+  protein: z.coerce.number().min(0).max(500).optional(),
+  carbs: z.coerce.number().min(0).max(800).optional(),
+  fat: z.coerce.number().min(0).max(400).optional(),
+});
+
+export const savedMealIdSchema = z.object({
+  savedMealId: z.string().min(1),
+});
+
+export const logSavedMealSchema = z.object({
+  savedMealId: z.string().min(1),
+  date: dateSchema,
+  mealType: mealTypeSchema.optional(),
 });
 
 export const waterSchema = z.object({

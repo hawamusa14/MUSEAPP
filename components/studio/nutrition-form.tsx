@@ -22,6 +22,7 @@ export function NutritionForm({ today, waterMl }: { today: string; waterMl: numb
       protein: Number(formData.get("protein") || 0),
       carbs: Number(formData.get("carbs") || 0),
       fat: Number(formData.get("fat") || 0),
+      saveAsPreset: formData.get("saveAsPreset") === "on",
     });
     setPending(false);
     if (!result.ok) {
@@ -98,6 +99,10 @@ export function NutritionForm({ today, waterMl }: { today: string; waterMl: numb
               <Input id="fat" name="fat" type="number" min="0" step="0.1" />
             </div>
           </div>
+          <label className="flex min-h-11 items-center gap-2 text-sm">
+            <input type="checkbox" name="saveAsPreset" className="size-5 accent-[var(--primary)]" />
+            Also save as a reusable meal or snack
+          </label>
           <Button type="submit" className="min-h-12 w-full sm:w-auto" disabled={pending}>{pending ? "Saving..." : "Add Meal"}</Button>
         </form>
       </Card>

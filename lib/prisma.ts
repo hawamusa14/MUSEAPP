@@ -13,17 +13,18 @@ function createClient() {
   });
 }
 
-function hasPlanningModels(client: PrismaClient) {
+function hasCurrentModels(client: PrismaClient) {
   return Boolean(
     (client as { plannedWorkout?: unknown }).plannedWorkout &&
       (client as { workoutSchedule?: unknown }).workoutSchedule &&
-      (client as { workoutTemplate?: unknown }).workoutTemplate
+      (client as { workoutTemplate?: unknown }).workoutTemplate &&
+      (client as { savedMeal?: unknown }).savedMeal
   );
 }
 
 const existing = globalForPrisma.prisma;
 export const prisma =
-  existing && hasPlanningModels(existing) ? existing : createClient();
+  existing && hasCurrentModels(existing) ? existing : createClient();
 
 if (process.env.NODE_ENV !== "production") {
   globalForPrisma.prisma = prisma;
