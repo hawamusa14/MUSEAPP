@@ -276,6 +276,8 @@ export async function getDayHub(userId: string, day: string): Promise<DayDetailD
     (sum, item) => sum + (item.calories ?? 0),
     0
   );
+  const workoutBurn = workouts.reduce((sum, item) => sum + (item.calories || 0), 0);
+  const caloriesBurned = workoutBurn + cardioCalories;
 
   return {
     date: day,
@@ -288,12 +290,7 @@ export async function getDayHub(userId: string, day: string): Promise<DayDetailD
     })),
     steps: steps?.steps ?? null,
     stepGoal: settings?.stepGoal ?? 8000,
-    activeCalories:
-      steps?.calories != null
-        ? steps.calories
-        : cardioCalories === 0
-          ? null
-          : cardioCalories,
+    activeCalories: caloriesBurned || steps?.calories || null,
     cardio: cardio.map((item) => ({ type: item.type, durationMin: item.durationMin })),
     nutrition: daily
       ? {
@@ -307,6 +304,7 @@ export async function getDayHub(userId: string, day: string): Promise<DayDetailD
     proteinTarget: daily?.proteinTarget ?? settings?.proteinTarget ?? null,
     carbsTarget: daily?.carbsTarget ?? settings?.carbsTarget ?? null,
     fatTarget: daily?.fatTarget ?? settings?.fatTarget ?? null,
+    caloriesBurned,
     meals: meals.map((item) => ({
       id: item.id,
       date: dateKey(item.date),

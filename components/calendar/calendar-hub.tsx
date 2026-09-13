@@ -767,12 +767,24 @@ function DayPanel({
           <h3 className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Nutrition</h3>
           <p className="mt-2 text-sm">
             Calories: {Math.round(day.nutrition?.calories ?? 0)}
-            {day.calorieTarget ? ` / ${day.calorieTarget}` : ""}
+            {day.calorieTarget || day.caloriesBurned
+              ? ` / ${Math.round((day.calorieTarget || 0) + (day.caloriesBurned || 0))} allowed`
+              : ""}
           </p>
-          {day.calorieTarget ? (
+          <p className="text-sm text-muted-foreground">
+            {day.calorieTarget ? `${day.calorieTarget} goal` : "No calorie goal"}
+            {day.caloriesBurned ? ` · +${Math.round(day.caloriesBurned)} burned` : ""}
+            {day.calorieTarget || day.caloriesBurned
+              ? ` · ${Math.round(((day.calorieTarget || 0) + (day.caloriesBurned || 0)) - (day.nutrition?.calories ?? 0))} left`
+              : ""}
+          </p>
+          {day.calorieTarget || day.caloriesBurned ? (
             <Progress
               className="mt-2"
-              value={Math.min(100, ((day.nutrition?.calories ?? 0) / day.calorieTarget) * 100)}
+              value={Math.min(
+                100,
+                ((day.nutrition?.calories ?? 0) / ((day.calorieTarget || 0) + (day.caloriesBurned || 0) || 1)) * 100
+              )}
               label="Calories"
             />
           ) : null}

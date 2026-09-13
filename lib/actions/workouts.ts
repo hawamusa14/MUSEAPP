@@ -10,10 +10,10 @@ import { estimatedOneRepMax, setVolume } from "@/lib/calculations/strength";
 import { getWorkoutForUser } from "@/lib/data/workouts";
 import { revalidateStudio } from "@/lib/revalidate";
 import { workoutElapsedSeconds } from "@/lib/workout-metrics";
-import { renameWorkoutSchema, startWorkoutSchema, workoutIdSchema } from "@/lib/validations/workout";
+import { renameWorkoutSchema, startWorkoutSchema, workoutCaloriesSchema, workoutIdSchema } from "@/lib/validations/workout";
 
 function refreshWorkout(workoutId: string) {
-  revalidateStudio("/dashboard", "/workout", `/workout/${workoutId}`, "/calendar", "/history", "/analytics");
+  revalidateStudio("/dashboard", "/workout", `/workout/${workoutId}`, "/calendar", "/history", "/analytics", "/nutrition");
 }
 
 async function ownedWorkout(userId: string, workoutId: string) {
@@ -332,6 +332,25 @@ export async function deleteWorkoutAction(input: unknown): Promise<ActionResult>
     return {
       ok: false,
       error: toActionError(error, "Unable to remove that workout."),
+    };
+  }
+}
+
+export async function updateWorkoutCaloriesAction(input: unknown): Promise<ActionResult> {
+  try {
+    const user = await requireUser();
+    const data = workoutCaloriesSchema.parse(input);
+    await ownedWorkout(user.id, data.workoutId);
+    await prisma.workout.update({
+      where: { id: data.workoutId },
+      data: { calories: data.calories },
+    });
+    refreshWorkout(data.workoutId);
+    return { ok: true, data: undefined };
+  } catch (error) {
+    return {
+      ok: false,
+      error: toActionError(error, "Unable to save active calories."),
     };
   }
 }

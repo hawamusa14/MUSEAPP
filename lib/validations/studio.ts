@@ -74,12 +74,26 @@ export const goalSchema = z.object({
     "WORKOUT_FREQUENCY",
     "PROTEIN",
     "CALORIES",
+    "CARBS",
     "CUSTOM",
   ]),
   title: z.string().trim().min(2).max(80),
   targetValue: z.coerce.number().min(0).max(100000).optional(),
   unit: z.string().trim().max(20).optional(),
   targetDate: dateSchema.optional(),
+});
+
+const optionalMacro = (max: number) =>
+  z.preprocess((value) => {
+    if (value === null || value === undefined || value === "") return null;
+    return Number(value);
+  }, z.number().min(0).max(max).nullable());
+
+export const macroGoalsSchema = z.object({
+  calorieTarget: optionalMacro(20000),
+  proteinTarget: optionalMacro(1000),
+  carbsTarget: optionalMacro(2000),
+  fatTarget: optionalMacro(500).optional(),
 });
 
 export const completeGoalSchema = z.object({

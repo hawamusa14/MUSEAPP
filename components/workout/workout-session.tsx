@@ -25,6 +25,7 @@ import { TitleEditor } from "@/components/ui/title-editor";
 import { WorkoutTimer } from "@/components/workout/workout-timer";
 import type { LastPerformance, WorkoutDetail } from "@/types";
 import { SaveTemplateButton } from "@/components/calendar/save-template-button";
+import { ActiveCaloriesField } from "@/components/workout/active-calories-field";
 import { DeleteWorkoutButton } from "@/components/workout/delete-workout-button";
 
 export function WorkoutSession({
@@ -190,6 +191,8 @@ export function WorkoutSession({
           </Card>
         );
       })}
+
+      <ActiveCaloriesField workoutId={workout.id} calories={workout.calories} />
 
       {isOpen ? (
         <>

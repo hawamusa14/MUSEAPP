@@ -1,5 +1,6 @@
 import { requireUser } from "@/lib/auth";
 import { getDashboardData } from "@/lib/data/dashboard";
+import { getDayEnergy } from "@/lib/data/energy";
 import { DashboardView } from "@/components/dashboard/dashboard-view";
 
 export default async function DashboardPage({
@@ -8,7 +9,7 @@ export default async function DashboardPage({
   searchParams: Promise<{ pr?: string; done?: string }>;
 }) {
   const user = await requireUser();
-  const data = await getDashboardData(user.id);
+  const [data, energy] = await Promise.all([getDashboardData(user.id), getDayEnergy(user.id)]);
   const { pr, done } = await searchParams;
 
   return (
@@ -28,8 +29,12 @@ export default async function DashboardPage({
       steps={data.latestSteps}
       nutrition={data.latestNutrition}
       stepGoal={user.settings?.stepGoal ?? 8000}
-      calorieTarget={user.settings?.calorieTarget ?? null}
-      proteinTarget={user.settings?.proteinTarget ?? null}
+      calorieTarget={energy.allowed || user.settings?.calorieTarget || null}
+      proteinTarget={energy.proteinGoal || user.settings?.proteinTarget || null}
+      carbsTarget={energy.carbsGoal || null}
+      caloriesLeft={energy.left}
+      caloriesBurned={energy.burned}
+      caloriesEaten={energy.eaten}
       todayPlans={data.todayPlans}
       tomorrowPlans={data.tomorrowPlans}
       weekWorkouts={data.weekWorkouts}

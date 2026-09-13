@@ -39,6 +39,11 @@ export const renameWorkoutSchema = z.object({
   title: z.string().trim().min(1, "Give this workout a name.").max(80),
 });
 
+export const workoutCaloriesSchema = z.object({
+  workoutId: z.string().min(1),
+  calories: z.number().int().min(0).max(5000).nullable(),
+});
+
 export const addExerciseSchema = z.object({
   workoutId: z.string().min(1),
   exerciseId: z.string().min(1),

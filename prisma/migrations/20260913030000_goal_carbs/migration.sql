@@ -1,0 +1,2 @@
+-- AlterEnum
+ALTER TYPE "GoalType" ADD VALUE IF NOT EXISTS 'CARBS';

@@ -63,6 +63,7 @@ enum GoalType {
   WORKOUT_FREQUENCY
   PROTEIN
   CALORIES
+  CARBS
   CUSTOM
 }
 

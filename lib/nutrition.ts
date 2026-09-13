@@ -31,3 +31,30 @@ export type SavedMealDTO = {
   carbs: number;
   fat: number;
 };
+
+export type DayEnergy = {
+  eaten: number;
+  burned: number;
+  calorieGoal: number;
+  proteinEaten: number;
+  proteinGoal: number;
+  carbsEaten: number;
+  carbsGoal: number;
+  fatEaten: number;
+  fatGoal: number;
+};
+
+export function calorieAllowance(goal: number, burned: number) {
+  return Math.max(0, goal) + Math.max(0, burned);
+}
+
+export function caloriesRemaining(goal: number, burned: number, eaten: number) {
+  return calorieAllowance(goal, burned) - eaten;
+}
+
+export function withEnergyTotals(energy: DayEnergy) {
+  const allowed = calorieAllowance(energy.calorieGoal, energy.burned);
+  const left = caloriesRemaining(energy.calorieGoal, energy.burned, energy.eaten);
+  return { ...energy, allowed, left };
+}
+

@@ -6,12 +6,12 @@ import { MealEntryList } from "@/components/studio/meal-entry-list";
 import { SavedMeals } from "@/components/studio/saved-meals";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { CaloriesLeftCard } from "@/components/studio/calories-left-card";
+import { getDayEnergy } from "@/lib/data/energy";
 
 export default async function NutritionPage() {
   const user = await requireUser();
-  const data = await getNutritionPage(user.id);
-  const calories = data.daily?.calories ?? 0;
-  const protein = data.daily?.protein ?? 0;
+  const [data, energy] = await Promise.all([getNutritionPage(user.id), getDayEnergy(user.id)]);
   const calorieTarget = user.settings?.calorieTarget ?? 0;
   const proteinTarget = user.settings?.proteinTarget ?? 0;
   const today = toInputDate();
@@ -26,22 +26,36 @@ export default async function NutritionPage() {
         </p>
       </header>
 
-      <div className="grid gap-4 sm:grid-cols-3">
+      <CaloriesLeftCard
+        calorieGoal={energy.calorieGoal}
+        burned={energy.burned}
+        eaten={energy.eaten}
+      />
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
           <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Calories</p>
           <p className="mt-2 font-heading text-2xl">
-            {Math.round(calories)}
-            {calorieTarget ? ` / ${calorieTarget}` : ""}
+            {Math.round(energy.eaten)}
+            {energy.allowed ? ` / ${Math.round(energy.allowed)}` : calorieTarget ? ` / ${calorieTarget}` : ""}
           </p>
-          {calorieTarget ? <Progress className="mt-3" value={(calories / calorieTarget) * 100} /> : null}
+          {energy.allowed ? <Progress className="mt-3" value={(energy.eaten / energy.allowed) * 100} /> : null}
         </Card>
         <Card>
           <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Protein</p>
           <p className="mt-2 font-heading text-2xl">
-            {Math.round(protein)}g
-            {proteinTarget ? ` / ${proteinTarget}g` : ""}
+            {Math.round(energy.proteinEaten)}g
+            {energy.proteinGoal ? ` / ${energy.proteinGoal}g` : proteinTarget ? ` / ${proteinTarget}g` : ""}
           </p>
-          {proteinTarget ? <Progress className="mt-3" value={(protein / proteinTarget) * 100} /> : null}
+          {energy.proteinGoal ? <Progress className="mt-3" value={(energy.proteinEaten / energy.proteinGoal) * 100} /> : null}
+        </Card>
+        <Card>
+          <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Carbs</p>
+          <p className="mt-2 font-heading text-2xl">
+            {Math.round(energy.carbsEaten)}g
+            {energy.carbsGoal ? ` / ${energy.carbsGoal}g` : ""}
+          </p>
+          {energy.carbsGoal ? <Progress className="mt-3" value={(energy.carbsEaten / energy.carbsGoal) * 100} /> : null}
         </Card>
         <Card>
           <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Water</p>

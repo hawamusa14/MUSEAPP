@@ -19,6 +19,10 @@ export function DashboardView({
   stepGoal,
   calorieTarget,
   proteinTarget,
+  carbsTarget,
+  caloriesLeft,
+  caloriesBurned,
+  caloriesEaten,
   prCount = 0,
   justFinished = false,
   todayPlans = [],
@@ -34,6 +38,10 @@ export function DashboardView({
   stepGoal: number;
   calorieTarget: number | null;
   proteinTarget: number | null;
+  carbsTarget?: number | null;
+  caloriesLeft?: number;
+  caloriesBurned?: number;
+  caloriesEaten?: number;
   prCount?: number;
   justFinished?: boolean;
   todayPlans?: PlanDTO[];
@@ -128,13 +136,19 @@ export function DashboardView({
           }
         />
         <Metric
-          label="Calories"
+          label="Calories left"
           value={
-            calorieTarget
-              ? `${Math.round(nutrition?.calories ?? 0)} / ${calorieTarget}`
-              : `${Math.round(nutrition?.calories ?? 0)}`
+            caloriesLeft == null
+              ? `${Math.round(nutrition?.calories ?? 0)}`
+              : caloriesLeft < 0
+                ? `${Math.round(Math.abs(caloriesLeft))} over`
+                : String(Math.round(caloriesLeft))
           }
-          hint="From today's meals"
+          hint={
+            calorieTarget
+              ? `${Math.round(caloriesEaten ?? nutrition?.calories ?? 0)} eaten · ${calorieTarget} allowed${caloriesBurned ? ` · +${Math.round(caloriesBurned)} burned` : ""}`
+              : "From today's meals"
+          }
         />
         <Metric
           label="Protein"
@@ -143,6 +157,7 @@ export function DashboardView({
               ? `${Math.round(nutrition?.protein ?? 0)}g / ${proteinTarget}g`
               : `${Math.round(nutrition?.protein ?? 0)}g`
           }
+          hint={carbsTarget ? `Carbs goal ${carbsTarget}g` : undefined}
         />
         <Metric
           label="Steps"

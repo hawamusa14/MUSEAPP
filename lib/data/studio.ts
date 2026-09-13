@@ -272,6 +272,7 @@ export async function getGoalsPage(userId: string) {
     if (goal.type === "WEIGHT") current = latestWeight?.weight ?? null;
     if (goal.type === "PROTEIN") current = todayNutrition?.protein ?? 0;
     if (goal.type === "CALORIES") current = todayNutrition?.calories ?? 0;
+    if (goal.type === "CARBS") current = todayNutrition?.carbs ?? 0;
     if (goal.type === "STEPS") current = todaySteps?.steps ?? 0;
     if (goal.type === "WORKOUT_FREQUENCY") current = weekWorkouts;
     if (goal.type === "STRENGTH") {

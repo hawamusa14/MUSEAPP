@@ -37,7 +37,7 @@ export function GoalForm() {
       <form action={save} className="space-y-4">
         <CardHeader>
           <CardTitle>New goal</CardTitle>
-          <CardDescription>Weight, protein, steps, or something of your own.</CardDescription>
+          <CardDescription>Weight, calories, protein, carbs, steps, or something of your own.</CardDescription>
         </CardHeader>
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="space-y-2">
@@ -54,6 +54,7 @@ export function GoalForm() {
               <option value="WORKOUT_FREQUENCY">Workouts / week</option>
               <option value="PROTEIN">Protein</option>
               <option value="CALORIES">Calories</option>
+              <option value="CARBS">Carbs</option>
               <option value="CUSTOM">Custom</option>
             </select>
           </div>

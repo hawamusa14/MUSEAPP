@@ -191,6 +191,7 @@ export type DayDetailDTO = {
   proteinTarget: number | null;
   carbsTarget: number | null;
   fatTarget: number | null;
+  caloriesBurned: number;
   notes: string[];
   photoCount: number;
 };

@@ -3,12 +3,18 @@ import { getGoalsPage } from "@/lib/data/studio";
 import { formatShortDate } from "@/lib/dates";
 import { CompleteGoalButton } from "@/components/studio/complete-goal-button";
 import { GoalForm } from "@/components/studio/goal-form";
+import { MacroGoalsForm } from "@/components/studio/macro-goals-form";
+import { CaloriesLeftCard } from "@/components/studio/calories-left-card";
+import { getDayEnergy } from "@/lib/data/energy";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 
 export default async function GoalsPage() {
   const user = await requireUser();
-  const goals = await getGoalsPage(user.id);
+  const [goals, energy] = await Promise.all([
+    getGoalsPage(user.id),
+    getDayEnergy(user.id),
+  ]);
 
   return (
     <div className="mx-auto max-w-3xl space-y-8">
@@ -19,6 +25,19 @@ export default async function GoalsPage() {
           Set a target. MUSE will fill in progress from what you already log.
         </p>
       </header>
+
+      <CaloriesLeftCard
+        calorieGoal={energy.calorieGoal}
+        burned={energy.burned}
+        eaten={energy.eaten}
+      />
+
+      <MacroGoalsForm
+        calorieTarget={user.settings?.calorieTarget ?? null}
+        proteinTarget={user.settings?.proteinTarget ?? null}
+        carbsTarget={user.settings?.carbsTarget ?? null}
+        fatTarget={user.settings?.fatTarget ?? null}
+      />
 
       <GoalForm />
 
