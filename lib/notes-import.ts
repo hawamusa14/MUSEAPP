@@ -30,6 +30,7 @@ export function parseWorkoutNotes(text: string, year = new Date().getFullYear())
   let current: ParsedNoteWorkout | null = null;
   let lastTitle = "Workout";
   let awaitingTitle = false;
+  let pendingName = "";
 
   for (const line of lines) {
     if (!line) continue;
@@ -49,12 +50,18 @@ export function parseWorkoutNotes(text: string, year = new Date().getFullYear())
         exercises: [],
       };
       awaitingTitle = true;
+      pendingName = "";
       continue;
     }
 
     if (!current) continue;
 
-    if (awaitingTitle && !HAS_WEIGHT.test(line) && !looksLikeExercise(line)) {
+    if (
+      awaitingTitle &&
+      looksLikeTitle(line) &&
+      !HAS_WEIGHT.test(line) &&
+      !looksLikeExercise(line)
+    ) {
       current.title = line.replace(/[^\w\s+&/-]/g, "").trim() || lastTitle;
       current.muscleGroups = inferMuscleGroups(current.title);
       lastTitle = current.title;
@@ -63,8 +70,15 @@ export function parseWorkoutNotes(text: string, year = new Date().getFullYear())
     }
 
     awaitingTitle = false;
-    const exercise = parseExerciseLine(line);
-    if (exercise) current.exercises.push(exercise);
+    const exercise = parseExerciseLine(line, pendingName);
+    if (exercise) {
+      current.exercises.push(exercise);
+      pendingName = "";
+      continue;
+    }
+    if (looksLikeNameLine(line)) {
+      pendingName = joinNames(pendingName, cleanName(line));
+    }
   }
 
   if (current?.exercises.length) workouts.push(current);
@@ -77,14 +91,42 @@ function looksLikeExercise(line: string) {
   );
 }
 
-function parseExerciseLine(line: string): ParsedNoteExercise | null {
+function looksLikeTitle(line: string) {
+  if (looksLikeExercise(line) || HAS_WEIGHT.test(line)) return false;
+  return /\b(day|push|pull|upper|lower|arms?|glutes?|legs?|chest|back|shoulders?|core|full body|cardio|rest|hiit)\b/i.test(
+    line
+  );
+}
+
+function looksLikeNameLine(line: string) {
+  if (isDetailsLine(line) || HAS_WEIGHT.test(line)) return false;
+  return cleanName(line).length >= 2;
+}
+
+function isDetailsLine(line: string) {
+  return /^(warm[\s-]*up|working\s*sets?|\d)/i.test(line);
+}
+
+function joinNames(left: string, right: string) {
+  const first = cleanName(left);
+  const second = cleanName(right);
+  if (!first) return second;
+  if (!second) return first;
+  if (second.toLowerCase().includes(first.toLowerCase())) return second;
+  if (first.toLowerCase().includes(second.toLowerCase())) return first;
+  return `${first} ${second}`;
+}
+
+function parseExerciseLine(line: string, pendingName = ""): ParsedNoteExercise | null {
   if (!HAS_WEIGHT.test(line) && !/\d/.test(line)) return null;
 
   const [rawName, ...rest] = line.split(/\t+/);
-  const name = cleanName(rest.length ? rawName : nameBeforeDetails(line));
   const cut = line.search(/\s+(warm|working|\d)/i);
   const details = rest.join(" ").trim() || (cut > 0 ? line.slice(cut).trim() : "");
-  const source = details || line;
+  const extracted = cleanName(rest.length ? rawName : nameBeforeDetails(line));
+  const detailsOnly = isDetailsLine(line) || /^(warm|working|\d)/i.test(extracted);
+  const name = detailsOnly ? cleanName(pendingName) : joinNames(pendingName, extracted);
+  const source = detailsOnly ? line : details || line;
   if (!name) return null;
 
   const notes = leftoverNotes(source);

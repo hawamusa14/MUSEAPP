@@ -21,13 +21,7 @@ function normalize(value: string) {
 }
 
 function scoreNames(query: string, candidate: string) {
-  if (query === candidate) return 100;
-  if (query.includes(candidate) || candidate.includes(query)) return 82;
-  const queryParts = new Set(query.split(" ").filter(Boolean));
-  const candidateParts = candidate.split(" ").filter(Boolean);
-  if (queryParts.size === 0) return 0;
-  const overlap = candidateParts.filter((part) => queryParts.has(part)).length;
-  return (overlap / Math.max(queryParts.size, candidateParts.length)) * 70;
+  return query === candidate ? 100 : 0;
 }
 
 export async function importWorkoutNotesAction(
@@ -75,7 +69,7 @@ export async function importWorkoutNotesAction(
           const next = scoreNames(query, normalize(row.name));
           if (!best || next > best.score) best = { id: row.id, score: next };
         }
-        if (best && best.score >= 70) {
+        if (best && best.score >= 100) {
           exerciseIds.push(best.id);
           continue;
         }
