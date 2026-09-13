@@ -126,7 +126,7 @@ export type ExerciseTrend = {
 
 export async function getAnalyticsPage(userId: string) {
   const since = toDateOnly(new Date(Date.now() - 27 * 24 * 60 * 60 * 1000));
-  const [workouts, weights, goals, loggedExercises] = await Promise.all([
+  const [workouts, weights, goals, loggedExercises, nutritionDays, stepDays, cardioDays] = await Promise.all([
     prisma.workout.findMany({
       where: { userId, status: "COMPLETED", date: { gte: since } },
       select: { id: true },
@@ -151,6 +151,15 @@ export async function getAnalyticsPage(userId: string) {
       },
       orderBy: { workout: { date: "asc" } },
     }),
+    prisma.dailyNutrition.findMany({
+      where: { userId, date: { gte: since } },
+    }),
+    prisma.stepEntry.findMany({
+      where: { userId, date: { gte: since } },
+    }),
+    prisma.cardioSession.findMany({
+      where: { userId, date: { gte: since } },
+    }),
   ]);
 
   const trends = new Map<string, ExerciseTrend>();
@@ -166,11 +175,18 @@ export async function getAnalyticsPage(userId: string) {
     trends.set(row.exerciseId, current);
   }
 
+  const average = (values: number[]) =>
+    values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : 0;
+
   return {
     workoutCount: workouts.length,
     weights,
     openGoals: goals.length,
     exercises: [...trends.values()].sort((a, b) => a.name.localeCompare(b.name)),
+    averageCalories: Math.round(average(nutritionDays.map((item) => item.calories))),
+    averageProtein: Math.round(average(nutritionDays.map((item) => item.protein))),
+    averageSteps: Math.round(average(stepDays.map((item) => item.steps))),
+    cardioSessions: cardioDays.length,
   };
 }
 
@@ -179,7 +195,7 @@ export async function getGoalsPage(userId: string) {
   const weekStart = new Date(date);
   weekStart.setUTCDate(weekStart.getUTCDate() - weekStart.getUTCDay());
 
-  const [goals, latestWeight, todayNutrition, todaySteps, weekWorkouts] =
+  const [goals, latestWeight, todayNutrition, todaySteps, weekWorkouts, strengthRecords] =
     await Promise.all([
       prisma.fitnessGoal.findMany({
         where: { userId },
@@ -198,6 +214,10 @@ export async function getGoalsPage(userId: string) {
           date: { gte: weekStart },
         },
       }),
+      prisma.personalRecord.findMany({
+        where: { userId, type: "HEAVIEST_WEIGHT" },
+        orderBy: { value: "desc" },
+      }),
     ]);
 
   const decorated = goals.map((goal) => {
@@ -207,6 +227,12 @@ export async function getGoalsPage(userId: string) {
     if (goal.type === "CALORIES") current = todayNutrition?.calories ?? 0;
     if (goal.type === "STEPS") current = todaySteps?.steps ?? 0;
     if (goal.type === "WORKOUT_FREQUENCY") current = weekWorkouts;
+    if (goal.type === "STRENGTH") {
+      const record = goal.exerciseId
+        ? strengthRecords.find((item) => item.exerciseId === goal.exerciseId)
+        : strengthRecords[0];
+      current = record?.value ?? null;
+    }
 
     return {
       ...goal,

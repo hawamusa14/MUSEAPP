@@ -11,16 +11,27 @@ export async function addJournalAction(input: unknown): Promise<ActionResult> {
   try {
     const user = await requireUser();
     const data = journalSchema.parse(input);
+    const date = fromInputDate(data.date);
+    const workout = await prisma.workout.findFirst({
+      where: {
+        userId: user.id,
+        date,
+        status: { in: ["COMPLETED", "IN_PROGRESS"] },
+      },
+      orderBy: { createdAt: "desc" },
+      select: { id: true },
+    });
     await prisma.journalEntry.create({
       data: {
         userId: user.id,
-        date: fromInputDate(data.date),
+        date,
         entry: data.entry,
         energy: data.energy,
         sleep: data.sleep,
         recovery: data.recovery,
         stress: data.stress,
         workoutNotes: data.workoutNotes,
+        workoutId: workout?.id,
       },
     });
     revalidateStudio("/journal", "/calendar", "/dashboard");

@@ -29,6 +29,10 @@ export const appNav = [
 export const mobileNav = [
   appNav[0],
   appNav[1],
+  appNav[2],
   appNav[3],
-  appNav[4],
 ] as const;
+
+export const moreNav = appNav.filter(
+  (item) => !["/dashboard", "/workout", "/calendar", "/nutrition"].includes(item.href)
+);

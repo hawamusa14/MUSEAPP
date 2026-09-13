@@ -1,12 +1,11 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/auth";
-import { getWorkoutHistory } from "@/lib/data/workouts";
-import { formatDuration, formatShortDate } from "@/lib/dates";
+import { getHistoryTimeline } from "@/lib/data/history";
 import { Card } from "@/components/ui/card";
 
 export default async function HistoryPage() {
   const user = await requireUser();
-  const workouts = await getWorkoutHistory(user.id);
+  const items = await getHistoryTimeline(user.id);
 
   return (
     <div className="mx-auto max-w-3xl space-y-8">
@@ -14,30 +13,36 @@ export default async function HistoryPage() {
         <p className="text-xs uppercase tracking-[0.22em] text-primary">Archive</p>
         <h1 className="mt-2 font-heading text-4xl">History</h1>
         <p className="mt-2 text-muted-foreground">
-          Every session you started or saved, newest first.
+          Workouts, meals, steps, photos, and notes from the same records used everywhere else.
         </p>
       </header>
-      {workouts.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No workouts yet.</p>
+      {items.length === 0 ? (
+        <p className="text-sm text-muted-foreground">Nothing logged yet.</p>
       ) : (
         <div className="space-y-3">
-          {workouts.map((workout) => (
-            <Link key={workout.id} href={`/workout/${workout.id}`} className="block">
+          {items.map((item) => {
+            const body = (
               <Card>
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <p className="font-medium">{workout.title}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {formatShortDate(workout.date)} · {workout.status.toLowerCase()} ·{" "}
-                      {formatDuration(workout.durationSeconds ?? 0)} ·{" "}
-                      {workout.exercises.length} exercises
+                    <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">
+                      {item.date} · {item.kind}
                     </p>
+                    <p className="font-medium">{item.title}</p>
+                    <p className="text-sm text-muted-foreground">{item.detail}</p>
                   </div>
-                  <span className="text-sm text-primary">View</span>
+                  {item.href ? <span className="text-sm text-primary">View</span> : null}
                 </div>
               </Card>
-            </Link>
-          ))}
+            );
+            return item.href ? (
+              <Link key={`${item.kind}-${item.id}`} href={item.href} className="block">
+                {body}
+              </Link>
+            ) : (
+              <div key={`${item.kind}-${item.id}`}>{body}</div>
+            );
+          })}
         </div>
       )}
     </div>

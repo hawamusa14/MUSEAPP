@@ -99,3 +99,66 @@ export function monthGrid(monthStart: Date) {
 
   return cells;
 }
+
+
+export function startOfWeek(value: Date) {
+  const date = new Date(
+    Date.UTC(value.getUTCFullYear(), value.getUTCMonth(), value.getUTCDate())
+  );
+  const day = date.getUTCDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  date.setUTCDate(date.getUTCDate() + diff);
+  return date;
+}
+
+export function weekDays(start: Date) {
+  return Array.from({ length: 7 }, (_, index) => {
+    const day = new Date(start);
+    day.setUTCDate(start.getUTCDate() + index);
+    return day;
+  });
+}
+
+export function weekKey(value: Date) {
+  return startOfWeek(value).toISOString().slice(0, 10);
+}
+
+export function parseWeekKey(value?: string) {
+  if (value && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return startOfWeek(fromInputDate(value));
+  }
+  return startOfWeek(toDateOnly());
+}
+
+export function shiftWeek(value: Date, delta: number) {
+  const next = new Date(value);
+  next.setUTCDate(value.getUTCDate() + delta * 7);
+  return startOfWeek(next);
+}
+
+export function weekLabel(start: Date) {
+  const end = new Date(start);
+  end.setUTCDate(start.getUTCDate() + 6);
+  return `${formatShortDate(start)} – ${formatShortDate(end)}`;
+}
+
+export function formatWeekday(value: Date) {
+  return new Intl.DateTimeFormat("en-US", {
+    weekday: "long",
+    timeZone: "UTC",
+  }).format(value);
+}
+
+export function formatLongDateUtc(value: Date) {
+  return new Intl.DateTimeFormat("en-US", {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(value);
+}
+
+export function dateKey(value: Date) {
+  return value.toISOString().slice(0, 10);
+}

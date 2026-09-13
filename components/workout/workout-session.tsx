@@ -59,17 +59,19 @@ export function WorkoutSession({
           </div>
         </div>
         {isOpen && !isPastLog ? (
-          <WorkoutTimer
-            workoutId={workout.id}
-            startedAt={workout.startedAt}
-            pausedAt={workout.pausedAt}
-            pausedMs={workout.pausedMs}
-          />
+          <div className="sticky top-0 z-20 -mx-1 rounded-2xl border border-border bg-background/95 px-3 py-2 shadow-sm backdrop-blur sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:p-0 sm:shadow-none">
+            <WorkoutTimer
+              workoutId={workout.id}
+              startedAt={workout.startedAt}
+              pausedAt={workout.pausedAt}
+              pausedMs={workout.pausedMs}
+            />
+          </div>
         ) : null}
       </header>
 
       {prMessage ? (
-        <Card className="border-primary/40 bg-accent">
+        <Card className="pr-celebrate border-primary/40 bg-accent">
           <p className="font-medium">{prMessage}</p>
         </Card>
       ) : null}
@@ -172,13 +174,11 @@ export function WorkoutSession({
                       } saved.`
                     );
                   }
-                  router.push(
-                    `/dashboard${
-                      result.data.personalRecords
-                        ? `?pr=${result.data.personalRecords}`
-                        : ""
-                    }`
-                  );
+                  const params = new URLSearchParams({ done: "1" });
+                  if (result.data.personalRecords) {
+                    params.set("pr", String(result.data.personalRecords));
+                  }
+                  router.push(`/dashboard?${params.toString()}`);
                 })
               }
             >

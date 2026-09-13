@@ -7,6 +7,16 @@ import { toActionError, type ActionResult } from "@/lib/errors";
 import { revalidateStudio } from "@/lib/revalidate";
 import { nutritionEntrySchema, waterSchema } from "@/lib/validations/studio";
 
+async function nutritionTargets(userId: string) {
+  const settings = await prisma.userSettings.findUnique({ where: { userId } });
+  return {
+    calorieTarget: settings?.calorieTarget ?? null,
+    proteinTarget: settings?.proteinTarget ?? null,
+    carbsTarget: settings?.carbsTarget ?? null,
+    fatTarget: settings?.fatTarget ?? null,
+  };
+}
+
 async function syncDaily(userId: string, date: Date) {
   const entries = await prisma.nutritionEntry.findMany({ where: { userId, date } });
   const daily = await prisma.dailyNutrition.findFirst({ where: { userId, date } });
@@ -19,6 +29,7 @@ async function syncDaily(userId: string, date: Date) {
     }),
     { calories: 0, protein: 0, carbs: 0, fat: 0 }
   );
+  const targets = daily ? {} : await nutritionTargets(userId);
 
   await prisma.dailyNutrition.upsert({
     where: { userId_date: { userId, date } },
@@ -27,6 +38,7 @@ async function syncDaily(userId: string, date: Date) {
       date,
       ...totals,
       waterMl: daily?.waterMl ?? 0,
+      ...targets,
     },
     update: totals,
   });
@@ -65,12 +77,17 @@ export async function saveWaterAction(input: unknown): Promise<ActionResult> {
     const data = waterSchema.parse(input);
     const date = fromInputDate(data.date);
 
+    const existing = await prisma.dailyNutrition.findFirst({
+      where: { userId: user.id, date },
+    });
+    const targets = existing ? {} : await nutritionTargets(user.id);
     await prisma.dailyNutrition.upsert({
       where: { userId_date: { userId: user.id, date } },
       create: {
         userId: user.id,
         date,
         waterMl: data.waterMl,
+        ...targets,
       },
       update: { waterMl: data.waterMl },
     });

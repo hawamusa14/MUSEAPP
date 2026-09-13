@@ -49,8 +49,8 @@ export function SetRow({
   return (
     <div
       className={cn(
-        "rounded-2xl border p-3 transition-colors",
-        set.completed ? "border-primary/40 bg-accent/60" : "border-border bg-background"
+        "rounded-2xl border p-3 transition-all duration-300",
+        set.completed ? "set-complete border-primary/40 bg-accent/60" : "border-border bg-background"
       )}
     >
       <div className="flex items-center justify-between gap-2">

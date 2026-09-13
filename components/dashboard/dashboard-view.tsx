@@ -2,6 +2,7 @@ import Link from "next/link";
 import { muscleGroupLabel } from "@/lib/muscle-groups";
 import { firstName, formatDuration, formatLongDate } from "@/lib/dates";
 import { summarizeWorkout, workoutElapsedSeconds } from "@/lib/workout-metrics";
+import { formatTimeRange, planKindMeta, type PlanDTO } from "@/lib/planning";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,6 +19,11 @@ export function DashboardView({
   calorieTarget,
   proteinTarget,
   prCount = 0,
+  justFinished = false,
+  todayPlans = [],
+  tomorrowPlans = [],
+  weekWorkouts = 0,
+  workoutsTarget = null,
 }: {
   name: string;
   workout: WorkoutDetail | null;
@@ -28,23 +34,70 @@ export function DashboardView({
   calorieTarget: number | null;
   proteinTarget: number | null;
   prCount?: number;
+  justFinished?: boolean;
+  todayPlans?: PlanDTO[];
+  tomorrowPlans?: PlanDTO[];
+  weekWorkouts?: number;
+  workoutsTarget?: number | null;
 }) {
   const summary = workout ? summarizeWorkout(workout) : null;
+  const nextPlan = todayPlans.find((plan) => plan.status === "PLANNED") ?? tomorrowPlans[0];
 
   return (
-    <div className="mx-auto max-w-6xl space-y-8">
+    <div className="muse-page mx-auto max-w-6xl space-y-8">
       <header>
         <p className="text-sm text-muted-foreground">{formatLongDate()}</p>
         <h1 className="mt-1 font-heading text-4xl tracking-tight">
           {greeting()}, {firstName(name)}
         </h1>
+        <p className="mt-2 max-w-xl text-muted-foreground">
+          What are you doing today? What have you accomplished? What should you do next?
+        </p>
+        {justFinished ? (
+          <p className="muse-complete mt-3 rounded-2xl bg-accent px-4 py-3 text-sm">
+            Session saved. Your calendar, history, and progress now know about it.
+          </p>
+        ) : null}
         {prCount > 0 ? (
-          <p className="mt-3 rounded-2xl bg-accent px-4 py-3 text-sm">
-            New personal record{prCount === 1 ? "" : "s"} saved from your last
-            session.
+          <p className="pr-celebrate mt-3 rounded-2xl bg-accent px-4 py-3 text-sm">
+            New personal record{prCount === 1 ? "" : "s"} saved from your last session.
           </p>
         ) : null}
       </header>
+
+      <section className="grid gap-4 md:grid-cols-3">
+        <Card>
+          <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Today</p>
+          <p className="mt-2 font-heading text-2xl">
+            {todayPlans[0]?.title ?? (workout ? workout.title : "Open day")}
+          </p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {todayPlans[0]
+              ? formatTimeRange(todayPlans[0].startTime, todayPlans[0].endTime) ?? "Planned on your calendar"
+              : workout
+                ? "Logged in the tracker"
+                : "Nothing planned yet"}
+          </p>
+        </Card>
+        <Card>
+          <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Accomplished</p>
+          <p className="mt-2 font-heading text-2xl tabular-nums">
+            {workoutsTarget ? `${weekWorkouts} / ${workoutsTarget}` : weekWorkouts} this week
+          </p>
+          <Progress
+            className="mt-3"
+            value={workoutsTarget ? Math.min(100, (weekWorkouts / workoutsTarget) * 100) : weekWorkouts > 0 ? 40 : 0}
+            label="Weekly workouts"
+          />
+        </Card>
+        <Card>
+          <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Next</p>
+          <p className="mt-2 font-heading text-2xl">{nextPlan?.title ?? "Choose a plan"}</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {nextPlan ? `${nextPlan.date} · ${planKindMeta(nextPlan.kind).label}` : "Open Calendar to plan the week"}
+          </p>
+        </Card>
+      </section>
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <Metric
@@ -89,7 +142,9 @@ export function DashboardView({
                 ? workout.status === "IN_PROGRESS"
                   ? "A session is open. Resume exactly where you left off."
                   : "Today’s session is saved."
-                : "No workout logged today yet."}
+                : todayPlans.length
+                  ? "A planned workout is waiting on your calendar."
+                  : "No workout logged today yet."}
             </CardDescription>
           </CardHeader>
           {workout ? (
@@ -120,7 +175,12 @@ export function DashboardView({
               </div>
             </div>
           ) : (
-            <Button render={<Link href="/workout" />}>Start Workout</Button>
+            <div className="flex flex-wrap gap-3">
+              <Button render={<Link href="/workout" />}>Start Workout</Button>
+              <Button variant="outline" render={<Link href="/calendar" />}>
+                Open calendar
+              </Button>
+            </div>
           )}
         </Card>
 
@@ -143,18 +203,21 @@ export function DashboardView({
       <Card>
         <CardHeader>
           <CardTitle>Quick actions</CardTitle>
-          <CardDescription>The connected MUSE ecosystem starts with training.</CardDescription>
+          <CardDescription>Workouts, meals, recovery, and plans stay in one rhythm.</CardDescription>
         </CardHeader>
         <div className="flex flex-wrap gap-3">
           <Button render={<Link href="/workout" />}>Start Workout</Button>
+          <Button variant="outline" render={<Link href="/calendar" />}>
+            Plan week
+          </Button>
           <Button variant="outline" render={<Link href="/nutrition" />}>
             Log Food
           </Button>
           <Button variant="outline" render={<Link href="/progress" />}>
             Log Weight
           </Button>
-          <Button variant="outline" render={<Link href="/journal" />}>
-            Add Journal
+          <Button variant="outline" render={<Link href="/ai-coach" />}>
+            Ask Coach
           </Button>
         </div>
       </Card>

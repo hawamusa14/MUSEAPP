@@ -98,6 +98,33 @@ enum ActivityLevel {
   VERY_ACTIVE
 }
 
+enum FitnessExperience {
+  NEW
+  RETURNING
+  INTERMEDIATE
+  ADVANCED
+}
+
+enum GoalStatus {
+  ACTIVE
+  PAUSED
+  COMPLETED
+}
+
+enum ExerciseType {
+  STRENGTH
+  CARDIO
+  MOBILITY
+  STRETCH
+  OTHER
+}
+
+enum ExerciseDifficulty {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
 enum CardioIntensity {
   EASY
   MODERATE
@@ -134,18 +161,26 @@ model User {
   journalEntries   JournalEntry[]
   personalRecords  PersonalRecord[]
   fitnessGoals     FitnessGoal[]
+  plannedWorkouts  PlannedWorkout[]
+  workoutTemplates WorkoutTemplate[]
+  workoutSchedules WorkoutSchedule[]
 }
 
 model UserProfile {
-  id            String         @id @default(cuid())
-  userId        String         @unique
-  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  heightCm      Float?
-  dateOfBirth   DateTime?
-  sex           Sex?
-  activityLevel ActivityLevel?
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
+  id                    String             @id @default(cuid())
+  userId                String             @unique
+  user                  User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  heightCm              Float?
+  dateOfBirth           DateTime?
+  sex                   Sex?
+  activityLevel         ActivityLevel?
+  experience            FitnessExperience?
+  primaryGoalKind       FitnessGoalKind?
+  targetWeight          Float?
+  trainingFrequency     Int?
+  preferredDurationMin  Int?
+  createdAt             DateTime           @default(now())
+  updatedAt             DateTime           @updatedAt
 }
 
 model UserSettings {
@@ -191,9 +226,15 @@ model Exercise {
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
 
-  workoutExercises WorkoutExercise[]
-  personalRecords  PersonalRecord[]
-  fitnessGoals     FitnessGoal[]
+  workoutExercises  WorkoutExercise[]
+  personalRecords   PersonalRecord[]
+  fitnessGoals      FitnessGoal[]
+  plannedExercises  PlannedWorkoutExercise[]
+  templateExercises WorkoutTemplateExercise[]
+  secondaryMuscles  MuscleGroup[]
+  exerciseType      ExerciseType?
+  instructions      String?
+  difficulty        ExerciseDifficulty?
 
   @@index([userId])
   @@index([categoryId])
@@ -219,11 +260,16 @@ model Workout {
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 
-  exercises WorkoutExercise[]
+  plannedWorkoutId String?         @unique
+  plannedWorkout   PlannedWorkout? @relation(fields: [plannedWorkoutId], references: [id])
+  exercises        WorkoutExercise[]
+  journalEntries   JournalEntry[]
+  personalRecords  PersonalRecord[]
 
   @@index([userId, date])
   @@index([userId, status])
   @@index([userId, createdAt])
+  @@index([plannedWorkoutId])
 }
 
 model WorkoutExercise {
@@ -271,6 +317,7 @@ model PersonalRecord {
   weight     Float?
   reps       Int?
   workoutId  String?
+  workout    Workout?           @relation(fields: [workoutId], references: [id])
   notes      String?
   achievedAt DateTime           @default(now())
   createdAt  DateTime           @default(now())
@@ -278,6 +325,7 @@ model PersonalRecord {
 
   @@index([userId, exerciseId, type])
   @@index([userId, achievedAt])
+  @@index([workoutId])
 }
 
 model FitnessGoal {
@@ -294,11 +342,13 @@ model FitnessGoal {
   exerciseId  String?
   exercise    Exercise?        @relation(fields: [exerciseId], references: [id])
   isPrimary   Boolean          @default(false)
+  status      GoalStatus       @default(ACTIVE)
   completedAt DateTime?
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
 
   @@index([userId, type])
+  @@index([userId, status])
 }
 
 model NutritionEntry {
@@ -336,9 +386,13 @@ model DailyNutrition {
   fiber     Float    @default(0)
   sugar     Float    @default(0)
   sodium    Float    @default(0)
-  waterMl   Float    @default(0)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  waterMl        Float    @default(0)
+  calorieTarget  Float?
+  proteinTarget  Float?
+  carbsTarget    Float?
+  fatTarget      Float?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   @@unique([userId, date])
   @@index([userId, date])
@@ -414,6 +468,7 @@ model ProgressPhoto {
   date       DateTime   @db.Date
   angle      PhotoAngle
   label      String?
+  notes      String?
   url        String
   storageKey String?
   createdAt  DateTime   @default(now())
@@ -435,8 +490,162 @@ model JournalEntry {
   sleep        Int?
   hunger       Int?
   workoutNotes String?
+  workoutId    String?
+  workout      Workout? @relation(fields: [workoutId], references: [id], onDelete: SetNull)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
   @@index([userId, date])
+  @@index([workoutId])
+}
+
+
+enum PlanKind {
+  STRENGTH
+  CARDIO
+  ACTIVE_RECOVERY
+  MOBILITY
+  REST
+  CHECK_IN
+  CUSTOM
+}
+
+enum PlanStatus {
+  PLANNED
+  COMPLETED
+  SKIPPED
+}
+
+enum RecurrenceInterval {
+  WEEKLY
+  BIWEEKLY
+  CUSTOM
+}
+
+model PlannedWorkout {
+  id            String       @id @default(cuid())
+  userId        String
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title         String
+  date          DateTime     @db.Date
+  startTime     String?
+  endTime       String?
+  kind          PlanKind     @default(STRENGTH)
+  muscleGroups  MuscleGroup[]
+  notes         String?
+  stepGoal      Int?
+  cardioMinutes Float?
+  status        PlanStatus   @default(PLANNED)
+  templateId    String?
+  template      WorkoutTemplate? @relation(fields: [templateId], references: [id])
+  scheduleId    String?
+  schedule      WorkoutSchedule? @relation(fields: [scheduleId], references: [id])
+  workout       Workout?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  exercises     PlannedWorkoutExercise[]
+
+  @@index([userId, date])
+  @@index([userId, status])
+  @@index([templateId])
+  @@index([scheduleId])
+}
+
+model PlannedWorkoutExercise {
+  id               String         @id @default(cuid())
+  plannedWorkoutId String
+  plannedWorkout   PlannedWorkout @relation(fields: [plannedWorkoutId], references: [id], onDelete: Cascade)
+  exerciseId       String
+  exercise         Exercise       @relation(fields: [exerciseId], references: [id])
+  order            Int
+  notes            String?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  sets             PlannedWorkoutSet[]
+
+  @@index([plannedWorkoutId, order])
+  @@index([exerciseId])
+}
+
+model PlannedWorkoutSet {
+  id                       String                 @id @default(cuid())
+  plannedWorkoutExerciseId String
+  plannedWorkoutExercise   PlannedWorkoutExercise @relation(fields: [plannedWorkoutExerciseId], references: [id], onDelete: Cascade)
+  order                    Int
+  targetWeight             Float?
+  targetReps               Int?
+  restSeconds              Int?
+  notes                    String?
+  createdAt                DateTime               @default(now())
+  updatedAt                DateTime               @updatedAt
+
+  @@index([plannedWorkoutExerciseId, order])
+}
+
+model WorkoutTemplate {
+  id           String         @id @default(cuid())
+  userId       String
+  user         User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title        String
+  kind         PlanKind       @default(STRENGTH)
+  muscleGroups MuscleGroup[]
+  notes        String?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  exercises    WorkoutTemplateExercise[]
+  plans        PlannedWorkout[]
+  schedules    WorkoutSchedule[]
+}
+
+model WorkoutTemplateExercise {
+  id           String          @id @default(cuid())
+  templateId   String
+  template     WorkoutTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  exerciseId   String
+  exercise     Exercise        @relation(fields: [exerciseId], references: [id])
+  order        Int
+  notes        String?
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  sets         WorkoutTemplateSet[]
+
+  @@index([templateId, order])
+  @@index([exerciseId])
+}
+
+model WorkoutTemplateSet {
+  id                       String                  @id @default(cuid())
+  workoutTemplateExerciseId String
+  workoutTemplateExercise   WorkoutTemplateExercise @relation(fields: [workoutTemplateExerciseId], references: [id], onDelete: Cascade)
+  order                    Int
+  targetWeight             Float?
+  targetReps               Int?
+  restSeconds              Int?
+
+  @@index([workoutTemplateExerciseId, order])
+}
+
+model WorkoutSchedule {
+  id            String             @id @default(cuid())
+  userId        String
+  user          User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title         String
+  weekday       Int
+  interval      RecurrenceInterval @default(WEEKLY)
+  intervalWeeks Int                @default(1)
+  kind          PlanKind           @default(STRENGTH)
+  muscleGroups  MuscleGroup[]
+  startTime     String?
+  endTime       String?
+  startsOn      DateTime?          @db.Date
+  endsOn        DateTime?          @db.Date
+  templateId    String?
+  template      WorkoutTemplate?   @relation(fields: [templateId], references: [id])
+  isActive      Boolean            @default(true)
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+  instances     PlannedWorkout[]
+
+  @@index([userId, weekday])
+  @@index([userId, isActive])
 }

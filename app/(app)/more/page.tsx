@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { appNav } from "@/lib/navigation";
+import { moreNav } from "@/lib/navigation";
 import { Card } from "@/components/ui/card";
 
 export default function MorePage() {
@@ -7,7 +7,7 @@ export default function MorePage() {
     <div className="mx-auto max-w-xl space-y-6">
       <h1 className="font-heading text-4xl">More</h1>
       <div className="grid gap-3">
-        {appNav.slice(2).map((item) => {
+        {moreNav.map((item) => {
           const Icon = item.icon;
           return (
             <Link key={item.href} href={item.href}>

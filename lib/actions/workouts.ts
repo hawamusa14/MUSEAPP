@@ -226,6 +226,13 @@ export async function finishWorkoutAction(
         }
       }
 
+      if (detailed.plannedWorkoutId) {
+        await tx.plannedWorkout.updateMany({
+          where: { id: detailed.plannedWorkoutId, userId: user.id },
+          data: { status: "COMPLETED" },
+        });
+      }
+
       return count;
     }, { timeout: 20000, maxWait: 10000 });
 
@@ -252,6 +259,21 @@ export async function cancelWorkoutAction(input: unknown): Promise<ActionResult>
         endedAt: new Date(),
       },
     });
+
+    const cancelled = await prisma.workout.findFirst({
+      where: { id: workoutId, userId: user.id },
+      select: { plannedWorkoutId: true },
+    });
+    if (cancelled?.plannedWorkoutId) {
+      await prisma.plannedWorkout.updateMany({
+        where: { id: cancelled.plannedWorkoutId, userId: user.id },
+        data: { status: "PLANNED" },
+      });
+      await prisma.workout.update({
+        where: { id: workoutId },
+        data: { plannedWorkoutId: null },
+      });
+    }
 
     refreshWorkout(workoutId);
     return { ok: true, data: undefined };

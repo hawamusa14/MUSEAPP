@@ -133,3 +133,76 @@
     font-family: var(--font-heading);
   }
 }
+
+
+@keyframes muse-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes muse-soft-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in oklch, var(--primary) 25%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 6px transparent;
+  }
+}
+
+@keyframes muse-typing {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.muse-page {
+  animation: muse-fade-up 0.35s ease;
+}
+
+.muse-calendar-month,
+.muse-day-panel,
+.muse-modal {
+  animation: muse-fade-up 0.32s ease;
+}
+
+.set-complete {
+  animation: muse-soft-pulse 0.55s ease;
+}
+
+.pr-celebrate,
+.muse-complete {
+  animation: muse-fade-up 0.4s ease, muse-soft-pulse 0.8s ease;
+}
+
+.muse-typing {
+  animation: muse-typing 1.4s ease-in-out infinite;
+}
+
+.muse-toast {
+  animation: muse-fade-up 0.25s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .muse-page,
+  .muse-calendar-month,
+  .muse-day-panel,
+  .muse-modal,
+  .set-complete,
+  .pr-celebrate,
+  .muse-complete,
+  .muse-typing,
+  .muse-toast {
+    animation: none;
+  }
+}

@@ -11,6 +11,13 @@ export default async function SettingsPage() {
       weightUnit={user.settings?.weightUnit ?? "LB"}
       heightUnit={user.settings?.heightUnit ?? "IN"}
       theme={user.settings?.theme ?? "LIGHT"}
+      heightCm={user.profile?.heightCm ?? null}
+      activityLevel={user.profile?.activityLevel ?? null}
+      experience={user.profile?.experience ?? null}
+      primaryGoalKind={user.profile?.primaryGoalKind ?? null}
+      targetWeight={user.profile?.targetWeight ?? null}
+      trainingFrequency={user.profile?.trainingFrequency ?? null}
+      preferredDurationMin={user.profile?.preferredDurationMin ?? null}
     />
   );
 }

@@ -18,7 +18,7 @@ export default async function AnalyticsPage() {
         </p>
       </header>
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         <Card>
           <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Workouts</p>
           <p className="mt-2 font-sans text-3xl tabular-nums">{data.workoutCount}</p>
@@ -27,6 +27,23 @@ export default async function AnalyticsPage() {
         <Card>
           <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Open goals</p>
           <p className="mt-2 font-sans text-3xl tabular-nums">{data.openGoals}</p>
+        </Card>
+        <Card>
+          <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Avg calories</p>
+          <p className="mt-2 font-sans text-3xl tabular-nums">{data.averageCalories}</p>
+          <p className="mt-1 text-sm text-muted-foreground">From DailyNutrition</p>
+        </Card>
+        <Card>
+          <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Avg protein</p>
+          <p className="mt-2 font-sans text-3xl tabular-nums">{data.averageProtein}g</p>
+        </Card>
+        <Card>
+          <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Avg steps</p>
+          <p className="mt-2 font-sans text-3xl tabular-nums">{data.averageSteps.toLocaleString()}</p>
+        </Card>
+        <Card>
+          <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Cardio sessions</p>
+          <p className="mt-2 font-sans text-3xl tabular-nums">{data.cardioSessions}</p>
         </Card>
       </div>
 
