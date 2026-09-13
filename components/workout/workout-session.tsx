@@ -13,6 +13,7 @@ import {
   renameWorkoutExerciseAction,
 } from "@/lib/actions/exercises";
 import { formatShortDate } from "@/lib/dates";
+import { titleCaseName } from "@/lib/names";
 import { muscleGroupLabel } from "@/lib/muscle-groups";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -103,7 +104,7 @@ export function WorkoutSession({
             <CardHeader className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
               <div>
                 <TitleEditor
-                  value={item.exercise.name}
+                  value={titleCaseName(item.exercise.name)}
                   className="font-heading text-xl tracking-tight"
                   onSave={async (name) => {
                     const result = await renameWorkoutExerciseAction({

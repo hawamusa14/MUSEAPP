@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { dateKey, toDateOnly } from "@/lib/dates";
+import { titleCaseName } from "@/lib/names";
 import { getUpcomingPlans, serializePlan } from "@/lib/data/plans";
 import type { CoachContext } from "@/lib/ai/scheduleCoach";
 
@@ -57,7 +58,7 @@ export async function buildAiContext(userId: string): Promise<CoachContext & {
     todayProtein: todayNutrition?.protein ?? null,
     todayCalories: todayNutrition?.calories ?? null,
     personalRecords: latestRecords.map((record) => ({
-      exercise: record.exercise.name,
+      exercise: titleCaseName(record.exercise.name),
       type: record.type,
       value: record.value,
     })),

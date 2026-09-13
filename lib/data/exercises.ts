@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { titleCaseName } from "@/lib/names";
 
 export async function searchExercises(input: {
   userId: string;
@@ -7,7 +8,7 @@ export async function searchExercises(input: {
 }) {
   const query = input.query?.trim();
 
-  return prisma.exercise.findMany({
+  const rows = await prisma.exercise.findMany({
     where: {
       AND: [
         {
@@ -28,6 +29,7 @@ export async function searchExercises(input: {
     orderBy: [{ isCustom: "asc" }, { name: "asc" }],
     take: 40,
   });
+  return rows.map((row) => ({ ...row, name: titleCaseName(row.name) }));
 }
 
 export async function getExerciseCategories() {

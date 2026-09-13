@@ -10,6 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { titleCaseName } from "@/lib/names";
 
 type SearchResult = Exercise & { category: ExerciseCategory };
 
@@ -121,7 +122,7 @@ export function ExercisePicker({
                 className="flex min-h-14 w-full items-center justify-between rounded-2xl border border-border px-4 text-left hover:bg-accent"
               >
                 <span>
-                  <span className="block font-medium">{exercise.name}</span>
+                  <span className="block font-medium">{titleCaseName(exercise.name)}</span>
                   <span className="text-xs text-muted-foreground">
                     {exercise.category.name}
                     {exercise.isCustom ? " · Custom" : ""}

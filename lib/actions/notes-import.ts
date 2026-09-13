@@ -7,6 +7,7 @@ import { fromInputDate } from "@/lib/dates";
 import { ActionError, toActionError, type ActionResult } from "@/lib/errors";
 import { revalidateStudio } from "@/lib/revalidate";
 import { importNotesSchema } from "@/lib/validations/notes-import";
+import { titleCaseName } from "@/lib/names";
 
 function slugify(value: string) {
   return value
@@ -75,7 +76,7 @@ export async function importWorkoutNotesAction(
         }
         const created = await prisma.exercise.create({
           data: {
-            name: item.name,
+            name: titleCaseName(item.name),
             slug: `${slugify(item.name)}-${user.id.slice(-6)}-${catalog.length + exerciseIds.length}`,
             categoryId: category.id,
             userId: user.id,

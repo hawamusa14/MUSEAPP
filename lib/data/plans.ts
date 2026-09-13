@@ -1,5 +1,6 @@
 import type { MuscleGroup, PlanKind, PlannedWorkout, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { titleCaseName } from "@/lib/names";
 import {
   dateKey,
   fromInputDate,
@@ -59,7 +60,7 @@ export function serializePlan(plan: PlanRecord): PlanDTO {
       return {
         id: item.id,
         exerciseId: item.exerciseId,
-        name: item.exercise.name,
+        name: titleCaseName(item.exercise.name),
         order: item.order,
         targetSets: targets.targetSets,
         targetReps: targets.targetReps,
@@ -125,7 +126,7 @@ export async function getTemplatesForUser(userId: string): Promise<TemplateDTO[]
       return {
         id: item.id,
         exerciseId: item.exerciseId,
-        name: item.exercise.name,
+        name: titleCaseName(item.exercise.name),
         order: item.order,
         targetSets: targets.targetSets,
         targetReps: targets.targetReps,

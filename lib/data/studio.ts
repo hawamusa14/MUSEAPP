@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { titleCaseName } from "@/lib/names";
 import { fromInputDate, monthGrid, parseMonthKey, toDateOnly } from "@/lib/dates";
 import { completionRatio } from "@/lib/calculations/progress";
 
@@ -168,7 +169,7 @@ export async function getAnalyticsPage(userId: string) {
     if (heaviest <= 0) continue;
     const current = trends.get(row.exerciseId) ?? {
       exerciseId: row.exerciseId,
-      name: row.exercise.name,
+      name: titleCaseName(row.exercise.name),
       points: [],
     };
     current.points.push({ date: row.workout.date, weight: heaviest });

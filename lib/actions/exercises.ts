@@ -13,6 +13,7 @@ import {
   searchExercisesSchema,
 } from "@/lib/validations/workout";
 import { revalidateStudio } from "@/lib/revalidate";
+import { titleCaseName } from "@/lib/names";
 
 function slugify(value: string) {
   return value
@@ -120,10 +121,11 @@ export async function createCustomExerciseAction(
       throw new ActionError("Choose a valid category.");
     }
 
-    const slug = `${slugify(data.name)}-${user.id.slice(-6)}`;
+    const name = titleCaseName(data.name);
+    const slug = `${slugify(name)}-${user.id.slice(-6)}`;
     const exercise = await prisma.exercise.create({
       data: {
-        name: data.name,
+        name,
         slug,
         equipment: data.equipment,
         categoryId: category.id,
@@ -206,29 +208,30 @@ export async function renameWorkoutExerciseAction(input: unknown): Promise<Actio
     });
     if (!row) throw new ActionError("That exercise is not in this workout.");
 
+    const name = titleCaseName(data.name);
     const current = row.exercise;
     const ownedCustom = Boolean(current.userId === user.id && current.isCustom);
     if (ownedCustom) {
       await prisma.exercise.update({
         where: { id: current.id },
         data: {
-          name: data.name,
-          slug: `${slugify(data.name)}-${user.id.slice(-6)}-${current.id.slice(-4)}`,
+          name,
+          slug: `${slugify(name)}-${user.id.slice(-6)}-${current.id.slice(-4)}`,
         },
       });
     } else {
       const match = await prisma.exercise.findFirst({
         where: {
           userId: user.id,
-          name: { equals: data.name, mode: "insensitive" },
+          name: { equals: name, mode: "insensitive" },
         },
       });
       const next =
         match ||
         (await prisma.exercise.create({
           data: {
-            name: data.name,
-            slug: `${slugify(data.name)}-${user.id.slice(-6)}-${row.id.slice(-4)}`,
+            name,
+            slug: `${slugify(name)}-${user.id.slice(-6)}-${row.id.slice(-4)}`,
             categoryId: current.categoryId,
             equipment: current.equipment,
             userId: user.id,

@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import { titleCaseName } from "@/lib/names";
 
 type DraftExercise = {
   exerciseId: string;
@@ -115,7 +116,7 @@ export function PlanForm({
       ...current,
       {
         exerciseId: exercise.id,
-        name: exercise.name,
+        name: titleCaseName(exercise.name),
         targetSets: "3",
         targetReps: "10",
         targetWeight: "",
@@ -312,7 +313,7 @@ export function PlanForm({
                       className="flex min-h-12 w-full items-center justify-between px-3 text-left hover:bg-accent"
                       onClick={() => addExercise(exercise)}
                     >
-                      <span>{exercise.name}</span>
+                      <span>{titleCaseName(exercise.name)}</span>
                       <span className="text-sm text-primary">Add</span>
                     </button>
                   </li>
@@ -325,7 +326,7 @@ export function PlanForm({
             {exercises.map((item, index) => (
               <div key={item.exerciseId} className="rounded-2xl border border-border p-3">
                 <div className="mb-3 flex items-center justify-between">
-                  <p className="font-medium">{item.name}</p>
+                  <p className="font-medium">{titleCaseName(item.name)}</p>
                   <Button
                     variant="ghost"
                     size="sm"

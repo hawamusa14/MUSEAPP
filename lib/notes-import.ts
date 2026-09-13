@@ -1,4 +1,5 @@
 import type { MuscleGroup } from "@prisma/client";
+import { titleCaseName } from "@/lib/names";
 
 export type ParsedNoteSet = {
   weight: number;
@@ -166,7 +167,7 @@ function nameBeforeDetails(line: string) {
 }
 
 function cleanName(value: string) {
-  return value.replace(/\s+/g, " ").replace(/[;]+/g, "").trim();
+  return titleCaseName(value);
 }
 
 function readReps(value: string) {

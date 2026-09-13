@@ -35,6 +35,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { TitleEditor } from "@/components/ui/title-editor";
 import { DeleteWorkoutButton } from "@/components/workout/delete-workout-button";
+import { titleCaseName } from "@/lib/names";
 import { cn } from "@/lib/utils";
 
 const WEEKDAYS_SUN = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -299,7 +300,7 @@ export function CalendarHub({ data }: { data: CalendarHubDTO }) {
                     />
                     <p className="text-sm text-muted-foreground">
                       {template.exercises.length
-                        ? template.exercises.map((item) => item.name).join(", ")
+                        ? template.exercises.map((item) => titleCaseName(item.name)).join(", ")
                         : "No exercises yet"}
                     </p>
                   </div>
@@ -692,7 +693,7 @@ function DayPanel({
                 <ul className="mt-4 space-y-2">
                   {plan.exercises.map((item) => (
                     <li key={item.id} className="flex items-center justify-between text-sm">
-                      <span>{item.name}</span>
+                      <span>{titleCaseName(item.name)}</span>
                       <span className="text-muted-foreground">
                         {item.targetSets ?? "—"} × {item.targetReps ?? "—"}
                         {item.targetWeight ? ` @ ${item.targetWeight}` : ""}
