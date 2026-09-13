@@ -23,17 +23,34 @@ const TRAILING_EQUIPMENT = new Set([
   "ez",
 ]);
 
+const MOVEMENT_STEMS = new Set([
+  "curl",
+  "dip",
+  "press",
+  "raise",
+  "row",
+  "extension",
+  "fly",
+  "pulldown",
+  "shrug",
+  "squat",
+  "lunge",
+  "crunch",
+  "kickback",
+  "pushdown",
+  "bicep",
+  "tricep",
+]);
+
 function singularize(token: string) {
-  if (token === "curls") return "curl";
-  if (token === "dips") return "dip";
-  if (token === "presses") return "press";
-  if (token === "raises") return "raise";
-  if (token === "rows") return "row";
-  if (token === "extensions") return "extension";
   if (token === "flyes" || token === "flys") return "fly";
-  if (token === "pulldowns") return "pulldown";
-  if (token === "biceps") return "bicep";
-  if (token === "triceps") return "tricep";
+  if (MOVEMENT_STEMS.has(token)) return token;
+  if (token.endsWith("es") && MOVEMENT_STEMS.has(token.slice(0, -2))) {
+    return token.slice(0, -2);
+  }
+  if (token.endsWith("s") && MOVEMENT_STEMS.has(token.slice(0, -1))) {
+    return token.slice(0, -1);
+  }
   return token;
 }
 
