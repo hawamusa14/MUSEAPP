@@ -51,7 +51,8 @@ export default async function AnalyticsPage() {
         <CardHeader>
           <CardTitle>Exercise progress</CardTitle>
           <CardDescription>
-            Heaviest weight logged for each movement, so you can see the climb over time.
+            Heaviest weight for each movement. Seated, standing, and duplicate names
+            are combined so you see one climb.
           </CardDescription>
         </CardHeader>
         {data.exercises.length === 0 ? (

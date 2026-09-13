@@ -1,7 +1,9 @@
 import { prisma } from "@/lib/prisma";
-import { titleCaseName } from "@/lib/names";
+import { groupExerciseTrends } from "@/lib/exercise-progress";
 import { dateKey, fromInputDate, monthGrid, parseMonthKey, toDateOnly } from "@/lib/dates";
 import { completionRatio } from "@/lib/calculations/progress";
+
+export type { ExerciseTrend, ExerciseTrendPoint } from "@/lib/exercise-progress";
 
 export async function getMonthStudio(userId: string, month?: string) {
   const start = parseMonthKey(month);
@@ -163,14 +165,6 @@ export async function getProgressPage(userId: string) {
   return { weights, measurements, steps };
 }
 
-export type ExerciseTrendPoint = { date: Date; weight: number };
-
-export type ExerciseTrend = {
-  exerciseId: string;
-  name: string;
-  points: ExerciseTrendPoint[];
-};
-
 export async function getAnalyticsPage(userId: string) {
   const since = toDateOnly(new Date(Date.now() - 27 * 24 * 60 * 60 * 1000));
   const [workouts, weights, goals, loggedExercises, nutritionDays, stepDays, cardioDays] = await Promise.all([
@@ -209,18 +203,14 @@ export async function getAnalyticsPage(userId: string) {
     }),
   ]);
 
-  const trends = new Map<string, ExerciseTrend>();
-  for (const row of loggedExercises) {
-    const heaviest = Math.max(0, ...row.sets.map((set) => set.weight ?? 0));
-    if (heaviest <= 0) continue;
-    const current = trends.get(row.exerciseId) ?? {
+  const exercises = groupExerciseTrends(
+    loggedExercises.map((row) => ({
       exerciseId: row.exerciseId,
-      name: titleCaseName(row.exercise.name),
-      points: [],
-    };
-    current.points.push({ date: row.workout.date, weight: heaviest });
-    trends.set(row.exerciseId, current);
-  }
+      name: row.exercise.name,
+      date: row.workout.date,
+      weight: Math.max(0, ...row.sets.map((set) => set.weight ?? 0)),
+    }))
+  );
 
   const average = (values: number[]) =>
     values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : 0;
@@ -229,7 +219,7 @@ export async function getAnalyticsPage(userId: string) {
     workoutCount: workouts.length,
     weights,
     openGoals: goals.length,
-    exercises: [...trends.values()].sort((a, b) => a.name.localeCompare(b.name)),
+    exercises,
     averageCalories: Math.round(average(nutritionDays.map((item) => item.calories))),
     averageProtein: Math.round(average(nutritionDays.map((item) => item.protein))),
     averageSteps: Math.round(average(stepDays.map((item) => item.steps))),
