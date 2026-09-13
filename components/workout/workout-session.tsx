@@ -4,7 +4,6 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { ExerciseCategory } from "@prisma/client";
 import {
-  cancelWorkoutAction,
   finishWorkoutAction,
   renameWorkoutAction,
 } from "@/lib/actions/workouts";
@@ -25,6 +24,7 @@ import { TitleEditor } from "@/components/ui/title-editor";
 import { WorkoutTimer } from "@/components/workout/workout-timer";
 import type { LastPerformance, WorkoutDetail } from "@/types";
 import { SaveTemplateButton } from "@/components/calendar/save-template-button";
+import { DeleteWorkoutButton } from "@/components/workout/delete-workout-button";
 
 export function WorkoutSession({
   workout,
@@ -71,11 +71,12 @@ export function WorkoutSession({
               <Badge key={group}>{muscleGroupLabel(group)}</Badge>
             ))}
           </div>
-          {workout.exercises.length > 0 ? (
-            <div className="mt-4">
+          <div className="mt-4 flex flex-wrap items-start gap-3">
+            {workout.exercises.length > 0 ? (
               <SaveTemplateButton workoutId={workout.id} title={workout.title} />
-            </div>
-          ) : null}
+            ) : null}
+            <DeleteWorkoutButton workoutId={workout.id} redirectTo="/workout" />
+          </div>
         </div>
         {isOpen && !isPastLog ? (
           <div className="sticky top-0 z-20 -mx-1 rounded-2xl border border-border bg-background/95 px-3 py-2 shadow-sm backdrop-blur sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:p-0 sm:shadow-none">
@@ -128,22 +129,27 @@ export function WorkoutSession({
                   </p>
                 )}
               </div>
-              {isOpen ? (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() =>
-                    startTransition(async () => {
-                      await removeWorkoutExerciseAction({
-                        workoutId: workout.id,
-                        workoutExerciseId: item.id,
-                      });
-                    })
-                  }
-                >
-                  Remove
-                </Button>
-              ) : null}
+              <Button
+                variant="ghost"
+                size="sm"
+                disabled={pending}
+                onClick={() =>
+                  startTransition(async () => {
+                    if (!window.confirm("Remove this exercise from the workout?")) return;
+                    const result = await removeWorkoutExerciseAction({
+                      workoutId: workout.id,
+                      workoutExerciseId: item.id,
+                    });
+                    if (!result.ok) {
+                      setError(result.error);
+                      return;
+                    }
+                    router.refresh();
+                  })
+                }
+              >
+                Remove
+              </Button>
             </CardHeader>
             <div className="space-y-3">
               {item.sets.map((set, index) => {
@@ -220,23 +226,6 @@ export function WorkoutSession({
               }
             >
               {isPastLog ? "Save Workout" : "Finish Workout"}
-            </Button>
-            <Button
-              className="min-h-12"
-              variant="outline"
-              disabled={pending}
-              onClick={() =>
-                startTransition(async () => {
-                  const result = await cancelWorkoutAction({ workoutId: workout.id });
-                  if (!result.ok) {
-                    setError(result.error);
-                    return;
-                  }
-                  router.push("/workout");
-                })
-              }
-            >
-              Discard
             </Button>
           </div>
         </>

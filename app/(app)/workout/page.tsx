@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { SaveTemplateButton } from "@/components/calendar/save-template-button";
 import { NotesImport } from "@/components/workout/notes-import";
+import { DeleteWorkoutButton } from "@/components/workout/delete-workout-button";
 
 export default async function WorkoutPage() {
   const user = await requireUser();
@@ -87,20 +88,23 @@ export default async function WorkoutPage() {
         <section className="space-y-3">
           <h2 className="font-heading text-2xl">Unfinished logs</h2>
           {drafts.map((workout) => (
-            <Link key={workout.id} href={`/workout/${workout.id}`} className="block">
-              <Card>
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <p className="font-medium">{workout.title}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {formatShortDate(workout.date)} · {workout.exercises.length}{" "}
-                      exercises
-                    </p>
-                  </div>
-                  <span className="text-sm text-primary">Continue</span>
+            <Card key={workout.id}>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <Link href={`/workout/${workout.id}`} className="min-w-0">
+                  <p className="font-medium">{workout.title}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {formatShortDate(workout.date)} · {workout.exercises.length}{" "}
+                    exercises
+                  </p>
+                </Link>
+                <div className="flex flex-wrap items-center gap-2">
+                  <DeleteWorkoutButton workoutId={workout.id} label="Delete" />
+                  <Button variant="ghost" render={<Link href={`/workout/${workout.id}`} />}>
+                    Continue
+                  </Button>
                 </div>
-              </Card>
-            </Link>
+              </div>
+            </Card>
           ))}
         </section>
       ) : null}
@@ -127,6 +131,7 @@ export default async function WorkoutPage() {
                   {workout.exercises.length > 0 ? (
                     <SaveTemplateButton workoutId={workout.id} title={workout.title} showNameField={false} />
                   ) : null}
+                  <DeleteWorkoutButton workoutId={workout.id} label="Delete" />
                   <Button variant="ghost" render={<Link href={`/workout/${workout.id}`} />}>
                     View
                   </Button>

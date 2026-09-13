@@ -34,6 +34,7 @@ import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/ca
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { TitleEditor } from "@/components/ui/title-editor";
+import { DeleteWorkoutButton } from "@/components/workout/delete-workout-button";
 import { cn } from "@/lib/utils";
 
 const WEEKDAYS_SUN = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -822,9 +823,12 @@ function DayPanel({
         {day.workouts.length > 0 ? (
           <div className="mt-4 space-y-2">
             {day.workouts.map((workout) => (
-              <Link key={workout.id} href={`/workout/${workout.id}`} className="block text-sm text-primary">
-                Logged: {workout.title} · {workout.exerciseCount} exercises
-              </Link>
+              <div key={workout.id} className="flex flex-wrap items-center justify-between gap-2">
+                <Link href={`/workout/${workout.id}`} className="text-sm text-primary">
+                  Logged: {workout.title} · {workout.exerciseCount} exercises
+                </Link>
+                <DeleteWorkoutButton workoutId={workout.id} label="Delete" />
+              </div>
             ))}
           </div>
         ) : null}

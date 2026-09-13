@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { getHistoryTimeline } from "@/lib/data/history";
+import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { NotesImport } from "@/components/workout/notes-import";
+import { DeleteWorkoutButton } from "@/components/workout/delete-workout-button";
 
 export default async function HistoryPage() {
   const user = await requireUser();
@@ -24,29 +26,29 @@ export default async function HistoryPage() {
         <p className="text-sm text-muted-foreground">Nothing logged yet.</p>
       ) : (
         <div className="space-y-3">
-          {items.map((item) => {
-            const body = (
-              <Card>
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">
-                      {item.date} · {item.kind}
-                    </p>
-                    <p className="font-medium">{item.title}</p>
-                    <p className="text-sm text-muted-foreground">{item.detail}</p>
-                  </div>
-                  {item.href ? <span className="text-sm text-primary">View</span> : null}
+          {items.map((item) => (
+            <Card key={`${item.kind}-${item.id}`}>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="min-w-0">
+                  <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">
+                    {item.date} · {item.kind}
+                  </p>
+                  <p className="font-medium">{item.title}</p>
+                  <p className="text-sm text-muted-foreground">{item.detail}</p>
                 </div>
-              </Card>
-            );
-            return item.href ? (
-              <Link key={`${item.kind}-${item.id}`} href={item.href} className="block">
-                {body}
-              </Link>
-            ) : (
-              <div key={`${item.kind}-${item.id}`}>{body}</div>
-            );
-          })}
+                <div className="flex flex-wrap items-center gap-2">
+                  {item.kind === "workout" ? (
+                    <DeleteWorkoutButton workoutId={item.id} label="Delete" />
+                  ) : null}
+                  {item.href ? (
+                    <Button variant="ghost" render={<Link href={item.href} />}>
+                      View
+                    </Button>
+                  ) : null}
+                </div>
+              </div>
+            </Card>
+          ))}
         </div>
       )}
     </div>

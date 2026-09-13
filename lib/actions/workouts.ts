@@ -304,3 +304,35 @@ export async function renameWorkoutAction(input: unknown): Promise<ActionResult>
   }
 }
 
+export async function deleteWorkoutAction(input: unknown): Promise<ActionResult> {
+  try {
+    const user = await requireUser();
+    const { workoutId } = workoutIdSchema.parse(input);
+    const workout = await ownedWorkout(user.id, workoutId);
+
+    if (workout.plannedWorkoutId) {
+      await prisma.plannedWorkout.updateMany({
+        where: { id: workout.plannedWorkoutId, userId: user.id },
+        data: { status: "PLANNED" },
+      });
+    }
+
+    await prisma.personalRecord.updateMany({
+      where: { workoutId, userId: user.id },
+      data: { workoutId: null },
+    });
+
+    await prisma.workout.delete({
+      where: { id: workoutId },
+    });
+
+    refreshWorkout(workoutId);
+    return { ok: true, data: undefined };
+  } catch (error) {
+    return {
+      ok: false,
+      error: toActionError(error, "Unable to remove that workout."),
+    };
+  }
+}
+

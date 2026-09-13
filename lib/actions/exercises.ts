@@ -176,7 +176,14 @@ export async function removeWorkoutExerciseAction(
       where: { id: workoutExercise.id },
     });
 
-    revalidatePath(`/workout/${data.workoutId}`);
+    revalidateStudio(
+      "/workout",
+      `/workout/${data.workoutId}`,
+      "/history",
+      "/calendar",
+      "/analytics",
+      "/dashboard"
+    );
     return { ok: true, data: undefined };
   } catch (error) {
     return {
