@@ -84,11 +84,12 @@ export async function addCardioAction(input: unknown): Promise<ActionResult> {
         date,
         type: data.type,
         durationMin: data.durationMin,
+        distanceKm: data.distanceKm,
         calories: data.calories,
         notes: data.notes,
       },
     });
-    revalidateStudio("/progress", "/dashboard", "/analytics", "/calendar", "/history");
+    revalidateStudio("/progress", "/dashboard", "/analytics", "/calendar", "/history", "/nutrition");
     return { ok: true, data: undefined };
   } catch (error) {
     return { ok: false, error: toActionError(error, "Unable to save that cardio session.") };

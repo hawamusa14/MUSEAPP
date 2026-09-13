@@ -22,9 +22,9 @@ export function ActiveCaloriesField({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Active calories burned</CardTitle>
+        <CardTitle>Strength calories</CardTitle>
         <CardDescription>
-          Add the total from this session. Those calories raise today&apos;s food allowance.
+          Optional extra burn from lifting only. Cardio calories above are counted separately.
         </CardDescription>
       </CardHeader>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end">

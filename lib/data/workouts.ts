@@ -14,6 +14,9 @@ export const workoutDetailInclude = {
       },
     },
   },
+  cardioSessions: {
+    orderBy: { createdAt: "asc" as const },
+  },
 };
 
 export async function getWorkoutForUser(userId: string, workoutId: string) {

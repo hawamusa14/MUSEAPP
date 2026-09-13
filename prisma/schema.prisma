@@ -265,6 +265,7 @@ model Workout {
   plannedWorkoutId String?         @unique
   plannedWorkout   PlannedWorkout? @relation(fields: [plannedWorkoutId], references: [id])
   exercises        WorkoutExercise[]
+  cardioSessions   CardioSession[]
   journalEntries   JournalEntry[]
   personalRecords  PersonalRecord[]
 
@@ -420,6 +421,8 @@ model CardioSession {
   id          String           @id @default(cuid())
   userId      String
   user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workoutId   String?
+  workout     Workout?         @relation(fields: [workoutId], references: [id], onDelete: Cascade)
   date        DateTime         @db.Date
   type        String
   durationMin Float
@@ -433,6 +436,7 @@ model CardioSession {
   updatedAt   DateTime         @updatedAt
 
   @@index([userId, date])
+  @@index([workoutId])
 }
 
 model StepEntry {

@@ -7,6 +7,7 @@ import { quickCreatePlanAction } from "@/lib/actions/plans";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { CARDIO_ACTIVITIES } from "@/lib/cardio";
 
 type SheetKind = "nutrition" | "cardio" | "photo";
 
@@ -198,7 +199,18 @@ function CardioFields({
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="hub-cardio-type">Activity</Label>
-          <Input id="hub-cardio-type" name="type" defaultValue="Walk" required />
+          <select
+            id="hub-cardio-type"
+            name="type"
+            defaultValue="Outdoor walk"
+            className="h-11 w-full rounded-xl border border-input bg-background px-3"
+          >
+            {CARDIO_ACTIVITIES.map((item) => (
+              <option key={item.id} value={item.label}>
+                {item.label}
+              </option>
+            ))}
+          </select>
         </div>
         <div className="space-y-2">
           <Label htmlFor="hub-cardio-min">Minutes</Label>

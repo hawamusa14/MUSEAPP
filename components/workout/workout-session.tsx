@@ -26,6 +26,7 @@ import { WorkoutTimer } from "@/components/workout/workout-timer";
 import type { LastPerformance, WorkoutDetail } from "@/types";
 import { SaveTemplateButton } from "@/components/calendar/save-template-button";
 import { ActiveCaloriesField } from "@/components/workout/active-calories-field";
+import { WorkoutCardioSection } from "@/components/workout/workout-cardio-section";
 import { DeleteWorkoutButton } from "@/components/workout/delete-workout-button";
 
 export function WorkoutSession({
@@ -192,16 +193,24 @@ export function WorkoutSession({
         );
       })}
 
+      {isOpen ? (
+        <Button
+          className="min-h-12 w-full"
+          onClick={() => setPickerOpen(true)}
+        >
+          Add exercise
+        </Button>
+      ) : null}
+
+      <WorkoutCardioSection
+        workoutId={workout.id}
+        sessions={workout.cardioSessions}
+        weightUnit={weightUnit}
+      />
       <ActiveCaloriesField workoutId={workout.id} calories={workout.calories} />
 
       {isOpen ? (
         <>
-          <Button
-            className="min-h-12 w-full"
-            onClick={() => setPickerOpen(true)}
-          >
-            Add exercise
-          </Button>
           <RestTimer />
           <div className="flex flex-col gap-3 sm:flex-row">
             <Button

@@ -44,6 +44,28 @@ export const workoutCaloriesSchema = z.object({
   calories: z.number().int().min(0).max(5000).nullable(),
 });
 
+const optionalAmount = (max: number, integer = false) =>
+  z.preprocess((value) => {
+    if (value === "" || value === undefined || value === null) return null;
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : value;
+  }, integer ? z.number().int().min(0).max(max).nullable() : z.number().min(0).max(max).nullable());
+
+export const workoutCardioSchema = z.object({
+  workoutId: z.string().min(1),
+  cardioId: z.string().min(1).optional(),
+  type: z.string().trim().min(1, "Choose a cardio activity.").max(40),
+  durationMin: z.coerce.number().min(1, "Add the minutes.").max(600),
+  distance: optionalAmount(200),
+  distanceUnit: z.enum(["MI", "KM"]).optional(),
+  calories: optionalAmount(5000, true),
+});
+
+export const workoutCardioIdSchema = z.object({
+  workoutId: z.string().min(1),
+  cardioId: z.string().min(1),
+});
+
 export const addExerciseSchema = z.object({
   workoutId: z.string().min(1),
   exerciseId: z.string().min(1),

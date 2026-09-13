@@ -10,7 +10,15 @@ import { estimatedOneRepMax, setVolume } from "@/lib/calculations/strength";
 import { getWorkoutForUser } from "@/lib/data/workouts";
 import { revalidateStudio } from "@/lib/revalidate";
 import { workoutElapsedSeconds } from "@/lib/workout-metrics";
-import { renameWorkoutSchema, startWorkoutSchema, workoutCaloriesSchema, workoutIdSchema } from "@/lib/validations/workout";
+import { toDistanceKm } from "@/lib/cardio";
+import {
+  renameWorkoutSchema,
+  startWorkoutSchema,
+  workoutCaloriesSchema,
+  workoutCardioIdSchema,
+  workoutCardioSchema,
+  workoutIdSchema,
+} from "@/lib/validations/workout";
 
 function refreshWorkout(workoutId: string) {
   revalidateStudio("/dashboard", "/workout", `/workout/${workoutId}`, "/calendar", "/history", "/analytics", "/nutrition");
@@ -351,6 +359,75 @@ export async function updateWorkoutCaloriesAction(input: unknown): Promise<Actio
     return {
       ok: false,
       error: toActionError(error, "Unable to save active calories."),
+    };
+  }
+}
+
+export async function saveWorkoutCardioAction(input: unknown): Promise<ActionResult> {
+  try {
+    const user = await requireUser();
+    const data = workoutCardioSchema.parse(input);
+    const workout = await ownedWorkout(user.id, data.workoutId);
+    const distanceKm = toDistanceKm(data.distance ?? null, data.distanceUnit);
+
+    if (data.cardioId) {
+      const existing = await prisma.cardioSession.findFirst({
+        where: { id: data.cardioId, userId: user.id, workoutId: workout.id },
+      });
+      if (!existing) {
+        throw new ActionError("We could not find that cardio block.");
+      }
+      await prisma.cardioSession.update({
+        where: { id: existing.id },
+        data: {
+          type: data.type,
+          durationMin: data.durationMin,
+          distanceKm,
+          calories: data.calories ?? null,
+        },
+      });
+    } else {
+      await prisma.cardioSession.create({
+        data: {
+          userId: user.id,
+          workoutId: workout.id,
+          date: workout.date,
+          type: data.type,
+          durationMin: data.durationMin,
+          distanceKm,
+          calories: data.calories ?? null,
+        },
+      });
+    }
+
+    refreshWorkout(workout.id);
+    return { ok: true, data: undefined };
+  } catch (error) {
+    return {
+      ok: false,
+      error: toActionError(error, "Unable to save that cardio."),
+    };
+  }
+}
+
+export async function deleteWorkoutCardioAction(input: unknown): Promise<ActionResult> {
+  try {
+    const user = await requireUser();
+    const data = workoutCardioIdSchema.parse(input);
+    await ownedWorkout(user.id, data.workoutId);
+    const existing = await prisma.cardioSession.findFirst({
+      where: { id: data.cardioId, userId: user.id, workoutId: data.workoutId },
+    });
+    if (!existing) {
+      throw new ActionError("We could not find that cardio block.");
+    }
+    await prisma.cardioSession.delete({ where: { id: existing.id } });
+    refreshWorkout(data.workoutId);
+    return { ok: true, data: undefined };
+  } catch (error) {
+    return {
+      ok: false,
+      error: toActionError(error, "Unable to remove that cardio."),
     };
   }
 }

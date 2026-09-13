@@ -114,6 +114,7 @@ export const cardioSessionSchema = z.object({
   date: dateSchema,
   type: z.string().trim().min(1, "Name the activity.").max(40),
   durationMin: z.coerce.number().min(1).max(600),
+  distanceKm: z.coerce.number().min(0).max(200).optional(),
   calories: z.coerce.number().int().min(0).max(5000).optional(),
   notes: z.string().trim().max(400).optional(),
 });
