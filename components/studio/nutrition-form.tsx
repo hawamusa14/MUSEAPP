@@ -98,7 +98,7 @@ export function NutritionForm({ today, waterMl }: { today: string; waterMl: numb
               <Input id="fat" name="fat" type="number" min="0" step="0.1" />
             </div>
           </div>
-          <Button type="submit" disabled={pending}>{pending ? "Saving..." : "Add Meal"}</Button>
+          <Button type="submit" className="min-h-12 w-full sm:w-auto" disabled={pending}>{pending ? "Saving..." : "Add Meal"}</Button>
         </form>
       </Card>
       <Card>
@@ -118,7 +118,7 @@ export function NutritionForm({ today, waterMl }: { today: string; waterMl: numb
               defaultValue={waterMl || 0}
             />
           </div>
-          <Button type="submit" variant="outline" disabled={pending}>
+          <Button type="submit" className="min-h-12 w-full sm:w-auto" variant="outline" disabled={pending}>
             Save Water
           </Button>
         </form>

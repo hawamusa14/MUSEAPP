@@ -41,10 +41,10 @@ export function RestTimer() {
   }
 
   return (
-    <Card>
+    <Card className={running ? "sticky bottom-20 z-30 border-primary/30 lg:static lg:bottom-auto" : ""}>
       <CardHeader>
         <CardTitle>Rest timer</CardTitle>
-        <CardDescription>Optional. Start it after a completed set.</CardDescription>
+        <CardDescription>Stays with you between sets. Start it after you mark a set done.</CardDescription>
       </CardHeader>
       <p className="font-heading text-4xl tabular-nums" aria-live="polite">
         {label}
@@ -55,6 +55,7 @@ export function RestTimer() {
             key={seconds}
             type="button"
             size="sm"
+            className="min-h-11"
             variant={duration === seconds ? "default" : "outline"}
             onClick={() => choose(seconds)}
           >
@@ -82,8 +83,8 @@ export function RestTimer() {
         </Button>
       </div>
       <div className="mt-4 flex flex-wrap gap-2">
-        <Button type="button" onClick={() => setRunning(true)} disabled={running || remaining === 0}>
-          Start
+        <Button className="min-h-12" type="button" onClick={() => setRunning(true)} disabled={running || remaining === 0}>
+          Start rest
         </Button>
         <Button type="button" variant="outline" onClick={() => setRunning(false)}>
           Pause

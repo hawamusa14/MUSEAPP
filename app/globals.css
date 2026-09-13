@@ -206,3 +206,12 @@
     animation: none;
   }
 }
+
+
+.muse-plan-chip {
+  transition: transform 0.2s ease, background-color 0.2s ease;
+}
+
+.muse-plan-chip:hover {
+  transform: translateY(-1px);
+}

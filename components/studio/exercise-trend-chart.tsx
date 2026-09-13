@@ -53,7 +53,8 @@ export function ExerciseTrendChart({
         </div>
         <p className="font-sans text-2xl tabular-nums">{latest.weight} {unit}</p>
       </div>
-      <svg viewBox={`0 0 ${width} ${height}`} className="h-48 w-full" role="img" aria-label={`${exercise.name} progress`}>
+      <div className="overflow-x-auto">
+      <svg viewBox={`0 0 ${width} ${height}`} className="h-48 w-full min-w-[28rem]" role="img" aria-label={`${exercise.name} progress`}>
         <line x1={left} y1={bottom} x2={right} y2={bottom} stroke="currentColor" strokeOpacity="0.15" />
         <path d={path} fill="none" stroke="currentColor" strokeWidth="3" className="text-primary" />
         {points.map((point, index) => (
@@ -78,6 +79,7 @@ export function ExerciseTrendChart({
           </g>
         ))}
       </svg>
+      </div>
     </div>
   );
 }

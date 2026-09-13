@@ -55,10 +55,10 @@ export function SetRow({
     >
       <div className="flex items-center justify-between gap-2">
         <p className="text-sm font-medium">Set {set.order}</p>
-        <label className="flex min-h-11 items-center gap-2 text-sm">
+        <label className="flex min-h-12 items-center gap-2 text-sm">
           <input
             type="checkbox"
-            className="size-5 accent-[var(--primary)]"
+            className="size-6 accent-[var(--primary)]"
             checked={set.completed}
             onChange={(event) => save({ completed: event.target.checked })}
             aria-label={`Mark set ${set.order} complete`}
@@ -72,6 +72,7 @@ export function SetRow({
           <Input
             id={`weight-${set.id}`}
             inputMode="decimal"
+            className="min-h-12 text-lg"
             value={weight}
             onChange={(event) => setWeight(event.target.value)}
             onBlur={() =>
@@ -84,6 +85,7 @@ export function SetRow({
           <Input
             id={`reps-${set.id}`}
             inputMode="numeric"
+            className="min-h-12 text-lg"
             value={reps}
             onChange={(event) => setReps(event.target.value)}
             onBlur={() => save({ reps: reps === "" ? null : Number(reps) })}

@@ -55,8 +55,8 @@ export function CoachChat() {
   }
 
   return (
-    <div className="muse-page mx-auto flex min-h-[70vh] max-w-3xl flex-col gap-5 lg:min-h-[78vh]">
-      <header>
+    <div className="muse-page mx-auto flex min-h-[calc(100dvh-8.5rem)] max-w-3xl flex-col gap-4 lg:min-h-[78vh]">
+      <header className="shrink-0">
         <p className="text-xs uppercase tracking-[0.22em] text-primary">MUSE Coach</p>
         <h1 className="mt-2 font-heading text-4xl">A quiet second mind</h1>
         <p className="mt-2 text-muted-foreground">
@@ -64,12 +64,12 @@ export function CoachChat() {
         </p>
       </header>
 
-      <div className="flex flex-wrap gap-2">
+      <div className="flex shrink-0 gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {SUGGESTIONS.map((item) => (
           <button
             key={item}
             type="button"
-            className="min-h-11 rounded-full border border-border px-3 text-left text-sm hover:bg-accent"
+            className="min-h-11 shrink-0 rounded-full border border-border px-3 text-left text-sm hover:bg-accent"
             onClick={() => ask(item)}
           >
             {item}
@@ -77,12 +77,12 @@ export function CoachChat() {
         ))}
       </div>
 
-      <Card className="flex flex-1 flex-col">
+      <Card className="flex min-h-0 flex-1 flex-col">
         <CardHeader>
           <CardTitle>Conversation</CardTitle>
           <CardDescription>Answers use your upcoming plan and recent training.</CardDescription>
         </CardHeader>
-        <div className="flex-1 space-y-4 overflow-y-auto">
+        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto">
           {messages.map((message, index) => (
             <div
               key={`${message.role}-${index}`}
@@ -130,7 +130,7 @@ export function CoachChat() {
           {pending ? <p className="muse-typing text-sm text-muted-foreground">MUSE is thinking…</p> : null}
         </div>
         <form
-          className="mt-4 flex gap-2"
+          className="sticky bottom-0 mt-4 flex gap-2 bg-card pt-2"
           onSubmit={(event) => {
             event.preventDefault();
             ask(question);

@@ -44,7 +44,7 @@ export function WorkoutSession({
     new Date(Date.UTC(new Date().getFullYear(), new Date().getMonth(), new Date().getDate())).getTime();
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
+    <div className="muse-page mx-auto max-w-3xl space-y-6 pb-8">
       <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-xs uppercase tracking-[0.2em] text-primary">

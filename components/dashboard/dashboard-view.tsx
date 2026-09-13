@@ -2,12 +2,13 @@ import Link from "next/link";
 import { muscleGroupLabel } from "@/lib/muscle-groups";
 import { firstName, formatDuration, formatLongDate } from "@/lib/dates";
 import { summarizeWorkout, workoutElapsedSeconds } from "@/lib/workout-metrics";
-import { formatTimeRange, planKindMeta, type PlanDTO } from "@/lib/planning";
+import { canStartPlannedWorkout, formatTimeRange, planKindMeta, type PlanDTO } from "@/lib/planning";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import type { WorkoutDetail } from "@/types";
+import { StartPlanButton } from "@/components/calendar/start-plan-button";
 
 export function DashboardView({
   name,
@@ -41,7 +42,10 @@ export function DashboardView({
   workoutsTarget?: number | null;
 }) {
   const summary = workout ? summarizeWorkout(workout) : null;
-  const nextPlan = todayPlans.find((plan) => plan.status === "PLANNED") ?? tomorrowPlans[0];
+  const todaysOpenPlan = todayPlans.find(
+    (plan) => plan.status === "PLANNED" && canStartPlannedWorkout(plan.kind)
+  );
+  const nextPlan = todaysOpenPlan ?? tomorrowPlans[0];
 
   return (
     <div className="muse-page mx-auto max-w-6xl space-y-8">
@@ -96,6 +100,17 @@ export function DashboardView({
           <p className="mt-1 text-sm text-muted-foreground">
             {nextPlan ? `${nextPlan.date} · ${planKindMeta(nextPlan.kind).label}` : "Open Calendar to plan the week"}
           </p>
+          {todaysOpenPlan ? (
+            <div className="mt-3">
+              <StartPlanButton planId={todaysOpenPlan.id} label="Start this workout" />
+            </div>
+          ) : (
+            <div className="mt-3">
+              <Button variant="outline" render={<Link href="/calendar" />}>
+                See calendar
+              </Button>
+            </div>
+          )}
         </Card>
       </section>
 
@@ -176,7 +191,11 @@ export function DashboardView({
             </div>
           ) : (
             <div className="flex flex-wrap gap-3">
-              <Button render={<Link href="/workout" />}>Start Workout</Button>
+              {todaysOpenPlan ? (
+                <StartPlanButton planId={todaysOpenPlan.id} label="Start planned workout" />
+              ) : (
+                <Button render={<Link href="/workout" />}>Start Workout</Button>
+              )}
               <Button variant="outline" render={<Link href="/calendar" />}>
                 Open calendar
               </Button>

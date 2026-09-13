@@ -141,7 +141,7 @@ export function CalendarHub({ data }: { data: CalendarHubDTO }) {
           <div>
             <CardTitle>{data.view === "week" ? data.weekLabel : data.monthLabel}</CardTitle>
             <CardDescription>
-              Outlined days are planned. Filled checks are completed. Recovery stays softer than strength.
+              Outlined days are planned. Completed days carry a check. On a phone, the week stacks as daily cards; on a larger screen you can drag a workout to another day.
             </CardDescription>
           </div>
           <div className="flex gap-2">
@@ -166,11 +166,20 @@ export function CalendarHub({ data }: { data: CalendarHubDTO }) {
             )}
           </div>
         </CardHeader>
+        <p className="mb-4 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-muted-foreground">
+          <span className="inline-flex items-center gap-1.5"><span className="size-2 rounded-full border border-primary/70" /> Planned</span>
+          <span className="inline-flex items-center gap-1.5">✓ Completed</span>
+          <span className="inline-flex items-center gap-1.5">☁️ Rest</span>
+          <span className="inline-flex items-center gap-1.5">🔥 Cardio</span>
+          <span className="inline-flex items-center gap-1.5"><span className="size-2 rounded-full bg-primary/40" /> Nutrition</span>
+          <span className="inline-flex items-center gap-1.5">📷 Photo</span>
+        </p>
         {data.view === "week" ? (
           <WeekBoard
             data={data}
             href={href}
             pending={pending}
+            onSelectDay={(day) => router.push(href({ day }))}
             onMove={(planId, date) => run(() => movePlanAction({ planId, date }), "Workout moved")}
           />
         ) : (
@@ -363,10 +372,16 @@ function MonthGrid({
               key={key}
               href={href({ day: key })}
               className={cn(
-                "min-h-16 rounded-2xl border p-1.5 text-left transition-all duration-300 sm:min-h-24 sm:p-2",
+                "min-h-[4.5rem] rounded-2xl border p-1.5 text-left transition-all duration-300 sm:min-h-28 sm:p-2",
                 selected
                   ? "border-primary bg-primary text-primary-foreground shadow-sm"
-                  : "border-border hover:bg-accent",
+                  : mark?.hasCompletedWorkout
+                    ? "border-primary/50 bg-accent/80 hover:bg-accent"
+                    : mark?.hasPlanned
+                      ? "border-primary/35 bg-accent/30 hover:bg-accent"
+                      : mark?.hasRest
+                        ? "border-dashed border-primary/30 hover:bg-accent"
+                        : "border-border hover:bg-accent",
                 isToday && !selected ? "ring-1 ring-primary/40" : ""
               )}
             >
@@ -381,7 +396,7 @@ function MonthGrid({
                 {mark?.hasNutrition ? <span className="size-1.5 rounded-full bg-current/50" /> : null}
                 {mark?.hasPhoto ? <span className="text-[10px]">📷</span> : null}
               </div>
-              <p className="mt-1 hidden truncate text-[11px] opacity-80 sm:block">
+              <p className="mt-1 truncate text-[10px] leading-tight opacity-80 sm:text-[11px]">
                 {mark?.plans[0]?.title ?? mark?.workoutTitles[0] ?? ""}
               </p>
             </Link>
@@ -396,11 +411,13 @@ function WeekBoard({
   data,
   href,
   pending,
+  onSelectDay,
   onMove,
 }: {
   data: CalendarHubDTO;
   href: (next: Partial<{ day: string }>) => string;
   pending: boolean;
+  onSelectDay: (day: string) => void;
   onMove: (planId: string, date: string) => void;
 }) {
   return (
@@ -434,11 +451,9 @@ function WeekBoard({
                   type="button"
                   draggable={!pending}
                   onDragStart={(event) => event.dataTransfer.setData("text/plan-id", plan.id)}
-                  onClick={() => {
-                    window.location.href = href({ day: key });
-                  }}
+                  onClick={() => onSelectDay(key)}
                   className={cn(
-                    "w-full rounded-xl border px-2 py-2 text-left text-sm",
+                    "muse-plan-chip min-h-11 w-full rounded-xl border px-2 py-2 text-left text-sm",
                     plan.status === "COMPLETED"
                       ? "border-primary bg-primary/10"
                       : isRecoveryKind(plan.kind)
@@ -525,13 +540,13 @@ function DayPanel({
                   </h4>
                   <Badge className="mt-2">{planStatusLabel(plan.status)}</Badge>
                 </div>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
                   {canStartPlannedWorkout(plan.kind) && plan.status === "PLANNED" ? (
-                    <Button className="min-h-11" disabled={pending} onClick={() => onStart(plan.id)}>
+                    <Button className="min-h-12 w-full sm:w-auto" disabled={pending} onClick={() => onStart(plan.id)}>
                       {plan.workoutStatus === "IN_PROGRESS" ? "Resume workout" : "Start workout"}
                     </Button>
                   ) : null}
-                  <Button variant="outline" className="min-h-11" disabled={pending} onClick={() => onEdit(plan)}>
+                  <Button variant="outline" className="min-h-12 w-full sm:w-auto" disabled={pending} onClick={() => onEdit(plan)}>
                     Edit
                   </Button>
                 </div>
@@ -591,7 +606,12 @@ function DayPanel({
         <div>
           <h3 className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Today’s activity</h3>
           <p className="mt-2 text-sm">Steps: {day.steps?.toLocaleString() ?? "—"} / {day.stepGoal.toLocaleString()}</p>
-          <p className="text-sm">Active calories: {day.activeCalories ?? "—"}</p>
+          <Progress
+            className="mt-2"
+            value={Math.min(100, ((day.steps ?? 0) / Math.max(day.stepGoal, 1)) * 100)}
+            label="Steps"
+          />
+          <p className="mt-3 text-sm">Active calories: {day.activeCalories ?? "—"}</p>
           <p className="text-sm">
             Cardio:{" "}
             {day.cardio.length
@@ -607,10 +627,24 @@ function DayPanel({
             Calories: {Math.round(day.nutrition?.calories ?? 0)}
             {day.calorieTarget ? ` / ${day.calorieTarget}` : ""}
           </p>
-          <p className="text-sm">
+          {day.calorieTarget ? (
+            <Progress
+              className="mt-2"
+              value={Math.min(100, ((day.nutrition?.calories ?? 0) / day.calorieTarget) * 100)}
+              label="Calories"
+            />
+          ) : null}
+          <p className="mt-3 text-sm">
             Protein: {Math.round(day.nutrition?.protein ?? 0)}g
             {day.proteinTarget ? ` / ${day.proteinTarget}g` : ""}
           </p>
+          {day.proteinTarget ? (
+            <Progress
+              className="mt-2"
+              value={Math.min(100, ((day.nutrition?.protein ?? 0) / day.proteinTarget) * 100)}
+              label="Protein"
+            />
+          ) : null}
           <p className="text-sm">
             Carbs: {Math.round(day.nutrition?.carbs ?? 0)}g
             {day.carbsTarget ? ` / ${day.carbsTarget}g` : ""}
