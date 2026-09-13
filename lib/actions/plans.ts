@@ -17,6 +17,7 @@ import {
   movePlanSchema,
   planIdSchema,
   quickCreatePlanSchema,
+  renameTemplateSchema,
   saveTemplateSchema,
   saveWorkoutTemplateSchema,
   templateIdSchema,
@@ -527,6 +528,28 @@ export async function applyTemplateAction(
     return {
       ok: false,
       error: toActionError(error, "Unable to add that template to the calendar."),
+    };
+  }
+}
+
+export async function renameTemplateAction(input: unknown): Promise<ActionResult> {
+  try {
+    const user = await requireUser();
+    const data = renameTemplateSchema.parse(input);
+    const row = await prisma.workoutTemplate.findFirst({
+      where: { id: data.templateId, userId: user.id },
+    });
+    if (!row) throw new ActionError("That template is no longer available.");
+    await prisma.workoutTemplate.update({
+      where: { id: row.id },
+      data: { title: data.title },
+    });
+    refreshPlans();
+    return { ok: true, data: undefined };
+  } catch (error) {
+    return {
+      ok: false,
+      error: toActionError(error, "Unable to rename that template."),
     };
   }
 }

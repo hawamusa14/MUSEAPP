@@ -81,14 +81,16 @@ function parseExerciseLine(line: string): ParsedNoteExercise | null {
   if (!HAS_WEIGHT.test(line) && !/\d/.test(line)) return null;
 
   const [rawName, ...rest] = line.split(/\t+/);
-  const details = rest.join(" ").trim() || line.replace(rawName, "").trim();
   const name = cleanName(rest.length ? rawName : nameBeforeDetails(line));
+  const cut = line.search(/\s+(warm|working|\d)/i);
+  const details = rest.join(" ").trim() || (cut > 0 ? line.slice(cut).trim() : "");
   const source = details || line;
   if (!name) return null;
 
   const notes = leftoverNotes(source);
-  const reps = readReps(source);
-  const workingCount = readSetCount(source);
+  const defaultReps = readReps(source);
+  const repSequence = readRepSequence(source);
+  const workingCount = repSequence ? repSequence.length : readSetCount(source);
   const warmupWeight = readLabeledWeight(source, /warm[\s-]*up(?:\s*sets?)?/i);
   const labeledWorking = readLabeledWeight(source, /working\s*sets?/i);
   let workingWeight = labeledWorking;
@@ -100,10 +102,16 @@ function parseExerciseLine(line: string): ParsedNoteExercise | null {
 
   const sets: ParsedNoteSet[] = [];
   if (warmupWeight != null) {
-    sets.push({ weight: warmupWeight, reps, kind: "warmup", notes: "Warm up" });
+    sets.push({
+      weight: warmupWeight,
+      reps: defaultReps,
+      kind: "warmup",
+      notes: "Warm-up",
+    });
   }
-  const load = workingWeight ?? warmupWeight ?? 0;
+  const load = workingWeight != null ? workingWeight : warmupWeight || 0;
   for (let index = 0; index < workingCount; index += 1) {
+    const reps = repSequence && repSequence[index] ? repSequence[index] : defaultReps;
     sets.push({ weight: load, reps, kind: "working", notes: null });
   }
 
@@ -133,8 +141,12 @@ function readSetCount(value: string) {
 }
 
 function readLabeledWeight(value: string, label: RegExp) {
-  const match = value.match(new RegExp(`${label.source}\\s*(?:=\\s*)?${WEIGHT.source}`, "i"));
-  return match ? Number(match[1] ?? match[2]) : null;
+  const withUnit = value.match(
+    new RegExp(`${label.source}\\s*(?:=\\s*)?(\\d+(?:\\.\\d+)?)\\s*(?:lbs?|pounds?|kg)`, "i")
+  );
+  if (withUnit) return Number(withUnit[1]);
+  const withEq = value.match(new RegExp(`${label.source}\\s*=\\s*(\\d+(?:\\.\\d+)?)`, "i"));
+  return withEq ? Number(withEq[1]) : null;
 }
 
 function readFirstWeight(value: string) {
@@ -142,20 +154,38 @@ function readFirstWeight(value: string) {
   return match ? Number(match[1]) : null;
 }
 
+function readRepSequence(value: string) {
+  const paren = value.match(/\((\d{1,3}(?:\s*,\s*\d{1,3}){1,11})\)/);
+  const labeled = value.match(
+    /(?:working\s*sets?|lbs?|pounds?|kg)\s*[,:]?\s*(\d{1,3}(?:\s*,\s*\d{1,3}){1,11})\b/i
+  );
+  const raw = paren ? paren[1] : labeled ? labeled[1] : null;
+  if (!raw) return null;
+  const nums = raw.split(/\s*,\s*/).map(Number);
+  if (nums.some((item) => !Number.isInteger(item) || item < 1 || item > 50)) return null;
+  return nums;
+}
+
 function leftoverNotes(value: string) {
-  const comment = value.match(/,\s*(.+)$/i);
-  const extra = comment && comment[1] ? comment[1].trim() : "";
-  if (extra && !/warm|working/i.test(extra)) return extra;
-  const cleaned = value
-    .replace(/warm[\s-]*up(?:\s*sets?)?\s*(?:=\s*)?\d+(?:\.\d+)?\s*(?:lbs?|pounds?|kg)?/gi, "")
-    .replace(/working\s*sets?\s*(?:=\s*)?\d+(?:\.\d+)?\s*(?:lbs?|pounds?|kg)?/gi, "")
+  let cleaned = value
+    .replace(/warm[\s-]*up(?:\s*sets?)?/gi, "")
+    .replace(/working\s*sets?/gi, "")
     .replace(/\d+\s*sets?\b/gi, "")
     .replace(/\d+\s*reps?\b/gi, "")
-    .replace(/\d+(?:\.\d+)?\s*(?:lbs?|pounds?|kg)/gi, "")
+    .replace(/\(\d{1,3}(?:\s*,\s*\d{1,3}){1,11}\)/g, "")
+    .replace(/\d{1,3}(?:\s*,\s*\d{1,3}){1,11}/g, " ")
     .replace(/[=,;]+/g, " ")
     .replace(/\s+/g, " ")
+    .replace(/^\d+(?:\.\d+)?\s*(?:lbs?|pounds?|kg)\s*/i, "")
     .trim();
-  return cleaned.length > 2 ? cleaned : null;
+  const prose = cleaned
+    .replace(/\d+(?:\.\d+)?\s*(?:lbs?|pounds?|kg)/gi, "")
+    .replace(/[^a-z]+/gi, " ")
+    .replace(/\b(lbs?|pounds?|kg|set)\b/gi, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (prose.length < 3) return null;
+  return cleaned;
 }
 
 export function inferMuscleGroups(title: string): MuscleGroup[] {
@@ -179,7 +209,16 @@ export function summarizeParsedWorkouts(workouts: ParsedNoteWorkout[]) {
     setCount: workout.exercises.reduce((sum, item) => sum + item.sets.length, 0),
     highlight: workout.exercises
       .slice(0, 3)
-      .map((item) => item.name)
-      .join(", "),
+      .map((item) => {
+        const warmup = item.sets.find((set) => set.kind === "warmup");
+        const working = item.sets.filter((set) => set.kind === "working");
+        const reps = working.map((set) => set.reps).join(",");
+        const load = working[0] ? working[0].weight : item.sets[0]?.weight;
+        const warm = warmup ? `warm-up ${warmup.weight}` : "";
+        return [item.name, warm, load != null && reps ? `${load} ${reps}` : ""]
+          .filter(Boolean)
+          .join(" ");
+      })
+      .join(" · "),
   }));
 }

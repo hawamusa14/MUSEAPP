@@ -6,6 +6,7 @@ import type { ExerciseCategory } from "@prisma/client";
 import {
   cancelWorkoutAction,
   finishWorkoutAction,
+  renameWorkoutAction,
 } from "@/lib/actions/workouts";
 import { addSetAction } from "@/lib/actions/sets";
 import { removeWorkoutExerciseAction } from "@/lib/actions/exercises";
@@ -16,7 +17,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ExercisePicker } from "@/components/workout/exercise-picker";
 import { RestTimer } from "@/components/workout/rest-timer";
-import { SetRow } from "@/components/workout/set-row";
+import { isWarmupSet, SetRow } from "@/components/workout/set-row";
+import { TitleEditor } from "@/components/ui/title-editor";
 import { WorkoutTimer } from "@/components/workout/workout-timer";
 import type { LastPerformance, WorkoutDetail } from "@/types";
 import { SaveTemplateButton } from "@/components/calendar/save-template-button";
@@ -51,7 +53,15 @@ export function WorkoutSession({
           <p className="text-xs uppercase tracking-[0.2em] text-primary">
             {isOpen ? (isPastLog ? "Past log" : "Live session") : "Completed"}
           </p>
-          <h1 className="mt-1 font-heading text-4xl">{workout.title}</h1>
+          <TitleEditor
+            heading
+            value={workout.title}
+            onSave={async (title) => {
+              const result = await renameWorkoutAction({ workoutId: workout.id, title });
+              if (result.ok) router.refresh();
+              return result;
+            }}
+          />
           <p className="mt-2 text-sm text-muted-foreground">{formatShortDate(workoutDate)}</p>
           <div className="mt-3 flex flex-wrap gap-2">
             {workout.muscleGroups.map((group) => (
@@ -122,15 +132,22 @@ export function WorkoutSession({
               ) : null}
             </CardHeader>
             <div className="space-y-3">
-              {item.sets.map((set, index) => (
-                <SetRow
-                  key={set.id}
-                  set={set}
-                  unit={unit}
-                  canMoveUp={isOpen && index > 0}
-                  canMoveDown={isOpen && index < item.sets.length - 1}
-                />
-              ))}
+              {item.sets.map((set, index) => {
+                const warmup = isWarmupSet(set.notes);
+                const workingNumber = item.sets
+                  .slice(0, index)
+                  .filter((entry) => !isWarmupSet(entry.notes)).length;
+                return (
+                  <SetRow
+                    key={set.id}
+                    set={set}
+                    unit={unit}
+                    label={warmup ? "Warm-up" : `Set ${workingNumber + 1}`}
+                    canMoveUp={isOpen && index > 0}
+                    canMoveDown={isOpen && index < item.sets.length - 1}
+                  />
+                );
+              })}
             </div>
             {isOpen ? (
               <Button

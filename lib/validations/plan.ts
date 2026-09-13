@@ -75,6 +75,11 @@ export const templateIdSchema = z.object({
   templateId: z.string().min(1),
 });
 
+export const renameTemplateSchema = z.object({
+  templateId: z.string().min(1),
+  title: z.string().trim().min(1, "Give this template a name.").max(80),
+});
+
 export const saveTemplateSchema = z.object({
   planId: z.string().min(1),
   title: z.string().trim().max(80).optional(),

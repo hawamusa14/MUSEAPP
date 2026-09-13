@@ -23,14 +23,20 @@ type SetValue = {
   completed: boolean;
 };
 
+export function isWarmupSet(notes: string | null | undefined) {
+  return Boolean(notes && /warm/i.test(notes));
+}
+
 export function SetRow({
   set,
   unit,
+  label,
   canMoveUp,
   canMoveDown,
 }: {
   set: SetValue;
   unit: string;
+  label?: string;
   canMoveUp: boolean;
   canMoveDown: boolean;
 }) {
@@ -38,6 +44,8 @@ export function SetRow({
   const [weight, setWeight] = useState(set.weight?.toString() ?? "");
   const [reps, setReps] = useState(set.reps?.toString() ?? "");
   const [error, setError] = useState<string | null>(null);
+  const warmup = isWarmupSet(set.notes);
+  const heading = label || (warmup ? "Warm-up" : `Set ${set.order}`);
 
   function save(partial: Record<string, unknown>) {
     startTransition(async () => {
@@ -50,18 +58,22 @@ export function SetRow({
     <div
       className={cn(
         "rounded-2xl border p-3 transition-all duration-300",
-        set.completed ? "set-complete border-primary/40 bg-accent/60" : "border-border bg-background"
+        warmup
+          ? "border-dashed border-primary/30 bg-muted/40"
+          : set.completed
+            ? "set-complete border-primary/40 bg-accent/60"
+            : "border-border bg-background"
       )}
     >
       <div className="flex items-center justify-between gap-2">
-        <p className="text-sm font-medium">Set {set.order}</p>
+        <p className="text-sm font-medium">{heading}</p>
         <label className="flex min-h-12 items-center gap-2 text-sm">
           <input
             type="checkbox"
             className="size-6 accent-[var(--primary)]"
             checked={set.completed}
             onChange={(event) => save({ completed: event.target.checked })}
-            aria-label={`Mark set ${set.order} complete`}
+            aria-label={`Mark ${heading} complete`}
           />
           Done
         </label>
@@ -93,6 +105,16 @@ export function SetRow({
         </div>
       </div>
       <div className="mt-3 flex flex-wrap gap-2">
+        <Button
+          type="button"
+          variant={warmup ? "default" : "outline"}
+          size="sm"
+          className="min-h-11"
+          disabled={pending}
+          onClick={() => save({ notes: warmup ? null : "Warm-up" })}
+        >
+          {warmup ? "Warm-up on" : "Mark warm-up"}
+        </Button>
         <Button
           type="button"
           variant="outline"

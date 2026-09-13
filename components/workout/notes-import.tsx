@@ -50,7 +50,7 @@ export function NotesImport({ defaultYear }: { defaultYear: number }) {
       <CardHeader>
         <CardTitle>Paste from Notes</CardTitle>
         <CardDescription>
-          Drop in a dated workout log. Review the preview, then MUSE writes completed sessions to Calendar, History, and Analytics.
+          Drop in a dated workout log. Numbers like 6,7,8 or (6,7,8) are reps in order: first set, second set, third set. Warm-up stays its own set.
         </CardDescription>
       </CardHeader>
       <div className="space-y-4">
@@ -71,7 +71,7 @@ export function NotesImport({ defaultYear }: { defaultYear: number }) {
             value={text}
             onChange={(event) => setText(event.target.value)}
             className="min-h-44 w-full rounded-2xl border border-input bg-background px-3 py-3"
-            placeholder={"04/02\nArm day\nBicep curls\tWarm up = 10lbs, working set = 15lbs"}
+            placeholder={"04/02\nArm day\nBicep curls\tWarm up = 10lbs, working set = 25lbs, 6,7,8"}
           />
         </div>
         {summary.length > 0 ? (

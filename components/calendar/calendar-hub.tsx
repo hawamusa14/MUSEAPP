@@ -9,6 +9,7 @@ import {
   deletePlanAction,
   deleteRecurringAction,
   deleteTemplateAction,
+  renameTemplateAction,
   movePlanAction,
   savePlanAsTemplateAction,
   skipPlanAction,
@@ -32,6 +33,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { TitleEditor } from "@/components/ui/title-editor";
 import { cn } from "@/lib/utils";
 
 const WEEKDAYS_SUN = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -284,9 +286,16 @@ export function CalendarHub({ data }: { data: CalendarHubDTO }) {
           ) : (
             <ul className="space-y-3">
               {data.templates.map((template) => (
-                <li key={template.id} className="flex items-center justify-between gap-3 rounded-2xl border border-border px-3 py-3">
-                  <div>
-                    <p className="font-medium">{template.title}</p>
+                <li key={template.id} className="flex flex-col gap-3 rounded-2xl border border-border px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="min-w-0">
+                    <TitleEditor
+                      value={template.title}
+                      onSave={async (title) => {
+                        const result = await renameTemplateAction({ templateId: template.id, title });
+                        if (result.ok) router.refresh();
+                        return result;
+                      }}
+                    />
                     <p className="text-sm text-muted-foreground">
                       {template.exercises.length
                         ? template.exercises.map((item) => item.name).join(", ")

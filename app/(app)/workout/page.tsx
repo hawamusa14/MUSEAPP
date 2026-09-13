@@ -125,7 +125,7 @@ export default async function WorkoutPage() {
                 </Link>
                 <div className="flex flex-wrap items-center gap-2">
                   {workout.exercises.length > 0 ? (
-                    <SaveTemplateButton workoutId={workout.id} title={workout.title} />
+                    <SaveTemplateButton workoutId={workout.id} title={workout.title} showNameField={false} />
                   ) : null}
                   <Button variant="ghost" render={<Link href={`/workout/${workout.id}`} />}>
                     View

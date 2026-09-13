@@ -10,7 +10,7 @@ import { estimatedOneRepMax, setVolume } from "@/lib/calculations/strength";
 import { getWorkoutForUser } from "@/lib/data/workouts";
 import { revalidateStudio } from "@/lib/revalidate";
 import { workoutElapsedSeconds } from "@/lib/workout-metrics";
-import { startWorkoutSchema, workoutIdSchema } from "@/lib/validations/workout";
+import { renameWorkoutSchema, startWorkoutSchema, workoutIdSchema } from "@/lib/validations/workout";
 
 function refreshWorkout(workoutId: string) {
   revalidateStudio("/dashboard", "/workout", `/workout/${workoutId}`, "/calendar", "/history", "/analytics");
@@ -284,3 +284,23 @@ export async function cancelWorkoutAction(input: unknown): Promise<ActionResult>
     };
   }
 }
+
+export async function renameWorkoutAction(input: unknown): Promise<ActionResult> {
+  try {
+    const user = await requireUser();
+    const data = renameWorkoutSchema.parse(input);
+    await ownedWorkout(user.id, data.workoutId);
+    await prisma.workout.update({
+      where: { id: data.workoutId },
+      data: { title: data.title },
+    });
+    refreshWorkout(data.workoutId);
+    return { ok: true, data: undefined };
+  } catch (error) {
+    return {
+      ok: false,
+      error: toActionError(error, "Unable to rename that workout."),
+    };
+  }
+}
+
