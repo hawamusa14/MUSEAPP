@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import { addNutritionEntryAction, saveWaterAction } from "@/lib/actions/nutrition";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,44 +8,44 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 export function NutritionForm({ today, waterMl }: { today: string; waterMl: number }) {
-  const [pending, startTransition] = useTransition();
+  const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
-  function saveMeal(formData: FormData) {
-    startTransition(async () => {
-      const result = await addNutritionEntryAction({
-        date: formData.get("date"),
-        mealType: formData.get("mealType"),
-        foodName: formData.get("foodName"),
-        calories: formData.get("calories"),
-        protein: formData.get("protein") || 0,
-        carbs: formData.get("carbs") || 0,
-        fat: formData.get("fat") || 0,
-      });
-      if (!result.ok) {
-        setError(result.error);
-        setMessage(null);
-        return;
-      }
-      setError(null);
-      setMessage("Meal saved.");
+  async function saveMeal(formData: FormData) {
+    setPending(true);
+    const result = await addNutritionEntryAction({
+      date: String(formData.get("date") ?? ""),
+      mealType: String(formData.get("mealType") ?? ""),
+      foodName: String(formData.get("foodName") ?? ""),
+      calories: Number(formData.get("calories")),
+      protein: Number(formData.get("protein") || 0),
+      carbs: Number(formData.get("carbs") || 0),
+      fat: Number(formData.get("fat") || 0),
     });
+    setPending(false);
+    if (!result.ok) {
+      setError(result.error);
+      setMessage(null);
+      return;
+    }
+    setError(null);
+    setMessage("Meal saved.");
   }
 
-  function saveWater(formData: FormData) {
-    startTransition(async () => {
-      const result = await saveWaterAction({
-        date: formData.get("waterDate"),
-        waterMl: formData.get("waterMl"),
-      });
-      if (!result.ok) {
-        setError(result.error);
-        return;
-      }
-      setError(null);
-      setMessage("Water updated.");
+  async function saveWater(formData: FormData) {
+    setPending(true);
+    const result = await saveWaterAction({
+      date: String(formData.get("waterDate") ?? ""),
+      waterMl: Number(formData.get("waterMl")),
     });
+    setPending(false);
+    if (!result.ok) {
+      setError(result.error);
+      return;
+    }
+    setError(null);
+    setMessage("Water updated.");
   }
 
   return (
@@ -98,7 +98,7 @@ export function NutritionForm({ today, waterMl }: { today: string; waterMl: numb
               <Input id="fat" name="fat" type="number" min="0" step="0.1" />
             </div>
           </div>
-          <Button disabled={pending}>{pending ? "Saving..." : "Add Meal"}</Button>
+          <Button type="submit" disabled={pending}>{pending ? "Saving..." : "Add Meal"}</Button>
         </form>
       </Card>
       <Card>
@@ -118,7 +118,7 @@ export function NutritionForm({ today, waterMl }: { today: string; waterMl: numb
               defaultValue={waterMl || 0}
             />
           </div>
-          <Button disabled={pending} variant="outline">
+          <Button type="submit" variant="outline" disabled={pending}>
             Save Water
           </Button>
         </form>

@@ -14,7 +14,7 @@ export default async function JournalPage() {
         <p className="text-xs uppercase tracking-[0.22em] text-primary">Wellness</p>
         <h1 className="mt-2 font-heading text-4xl">Journal</h1>
         <p className="mt-2 text-muted-foreground">
-          A private page for energy, recovery, and the feeling of the week.
+          Write about the day, the workout, or anything you want to keep.
         </p>
       </header>
 
@@ -40,6 +40,14 @@ export default async function JournalPage() {
                 </CardDescription>
               </CardHeader>
               <p className="whitespace-pre-wrap text-sm leading-7">{item.entry}</p>
+              {item.workoutNotes ? (
+                <div className="mt-4 rounded-2xl bg-accent/60 p-4">
+                  <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">
+                    Workout
+                  </p>
+                  <p className="mt-2 whitespace-pre-wrap text-sm leading-7">{item.workoutNotes}</p>
+                </div>
+              ) : null}
             </Card>
           ))
         )}

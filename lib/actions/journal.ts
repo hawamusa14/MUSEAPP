@@ -20,9 +20,10 @@ export async function addJournalAction(input: unknown): Promise<ActionResult> {
         sleep: data.sleep,
         recovery: data.recovery,
         stress: data.stress,
+        workoutNotes: data.workoutNotes,
       },
     });
-    revalidateStudio();
+    revalidateStudio("/journal", "/calendar", "/dashboard");
     return { ok: true, data: undefined };
   } catch (error) {
     return { ok: false, error: toActionError(error, "Unable to save that journal.") };

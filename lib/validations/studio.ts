@@ -19,7 +19,7 @@ export const waterSchema = z.object({
 
 export const weightEntrySchema = z.object({
   date: dateSchema,
-  weight: z.coerce.number().min(50).max(500),
+  weight: z.coerce.number().min(1).max(1000),
   notes: z.string().trim().max(200).optional(),
 });
 
@@ -62,4 +62,5 @@ export const journalSchema = z.object({
   sleep: z.coerce.number().int().min(1).max(10).optional(),
   recovery: z.coerce.number().int().min(1).max(10).optional(),
   stress: z.coerce.number().int().min(1).max(10).optional(),
+  workoutNotes: z.string().trim().max(4000).optional(),
 });

@@ -52,7 +52,7 @@ export async function addNutritionEntryAction(input: unknown): Promise<ActionRes
     });
 
     await syncDaily(user.id, date);
-    revalidateStudio();
+    revalidateStudio("/nutrition", "/dashboard", "/calendar");
     return { ok: true, data: undefined };
   } catch (error) {
     return { ok: false, error: toActionError(error, "Unable to save that meal.") };
@@ -75,7 +75,7 @@ export async function saveWaterAction(input: unknown): Promise<ActionResult> {
       update: { waterMl: data.waterMl },
     });
 
-    revalidateStudio();
+    revalidateStudio("/nutrition", "/dashboard", "/calendar");
     return { ok: true, data: undefined };
   } catch (error) {
     return { ok: false, error: toActionError(error, "Unable to save water.") };

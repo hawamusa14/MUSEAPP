@@ -21,7 +21,7 @@ export async function addGoalAction(input: unknown): Promise<ActionResult> {
         targetDate: data.targetDate ? fromInputDate(data.targetDate) : null,
       },
     });
-    revalidateStudio();
+    revalidateStudio("/goals", "/dashboard", "/analytics");
     return { ok: true, data: undefined };
   } catch (error) {
     return { ok: false, error: toActionError(error, "Unable to save that goal.") };
@@ -42,7 +42,7 @@ export async function completeGoalAction(input: unknown): Promise<ActionResult> 
       where: { id: goal.id },
       data: { completedAt: goal.completedAt ? null : new Date() },
     });
-    revalidateStudio();
+    revalidateStudio("/goals", "/dashboard", "/analytics");
     return { ok: true, data: undefined };
   } catch (error) {
     return { ok: false, error: toActionError(error, "Unable to update that goal.") };

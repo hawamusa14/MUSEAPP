@@ -1,6 +1,5 @@
 import { prisma } from "@/lib/prisma";
 import { fromInputDate, monthGrid, parseMonthKey, toDateOnly } from "@/lib/dates";
-import { setVolume } from "@/lib/calculations/strength";
 import { completionRatio } from "@/lib/calculations/progress";
 
 export async function getMonthStudio(userId: string, month?: string) {
@@ -117,13 +116,20 @@ export async function getProgressPage(userId: string) {
   return { weights, measurements, steps };
 }
 
+export type ExerciseTrendPoint = { date: Date; weight: number };
+
+export type ExerciseTrend = {
+  exerciseId: string;
+  name: string;
+  points: ExerciseTrendPoint[];
+};
+
 export async function getAnalyticsPage(userId: string) {
   const since = toDateOnly(new Date(Date.now() - 27 * 24 * 60 * 60 * 1000));
-  const [workouts, weights, goals] = await Promise.all([
+  const [workouts, weights, goals, loggedExercises] = await Promise.all([
     prisma.workout.findMany({
       where: { userId, status: "COMPLETED", date: { gte: since } },
-      include: { exercises: { include: { sets: true } } },
-      orderBy: { date: "asc" },
+      select: { id: true },
     }),
     prisma.weightEntry.findMany({
       where: { userId },
@@ -133,29 +139,38 @@ export async function getAnalyticsPage(userId: string) {
     prisma.fitnessGoal.findMany({
       where: { userId, completedAt: null },
     }),
+    prisma.workoutExercise.findMany({
+      where: {
+        workout: { userId, status: "COMPLETED" },
+        sets: { some: { weight: { gt: 0 } } },
+      },
+      include: {
+        exercise: true,
+        sets: true,
+        workout: { select: { date: true } },
+      },
+      orderBy: { workout: { date: "asc" } },
+    }),
   ]);
 
-  const volumeByDay = workouts.map((workout) => ({
-    date: workout.date,
-    title: workout.title,
-    volume: workout.exercises.reduce(
-      (sum, item) =>
-        sum +
-        item.sets.reduce(
-          (inner, set) => inner + setVolume(set.weight, set.reps),
-          0
-        ),
-      0
-    ),
-    sets: workout.exercises.reduce((sum, item) => sum + item.sets.length, 0),
-  }));
+  const trends = new Map<string, ExerciseTrend>();
+  for (const row of loggedExercises) {
+    const heaviest = Math.max(0, ...row.sets.map((set) => set.weight ?? 0));
+    if (heaviest <= 0) continue;
+    const current = trends.get(row.exerciseId) ?? {
+      exerciseId: row.exerciseId,
+      name: row.exercise.name,
+      points: [],
+    };
+    current.points.push({ date: row.workout.date, weight: heaviest });
+    trends.set(row.exerciseId, current);
+  }
 
   return {
     workoutCount: workouts.length,
-    totalVolume: volumeByDay.reduce((sum, item) => sum + item.volume, 0),
-    volumeByDay,
     weights,
     openGoals: goals.length,
+    exercises: [...trends.values()].sort((a, b) => a.name.localeCompare(b.name)),
   };
 }
 

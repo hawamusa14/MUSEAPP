@@ -24,7 +24,7 @@ export async function addWeightAction(input: unknown): Promise<ActionResult> {
         notes: data.notes,
       },
     });
-    revalidateStudio();
+    revalidateStudio("/progress", "/dashboard", "/analytics", "/calendar", "/goals");
     return { ok: true, data: undefined };
   } catch (error) {
     return { ok: false, error: toActionError(error, "Unable to save that weight.") };
@@ -44,7 +44,7 @@ export async function addMeasurementAction(input: unknown): Promise<ActionResult
         unit: data.unit,
       },
     });
-    revalidateStudio();
+    revalidateStudio("/progress", "/dashboard", "/analytics", "/calendar", "/goals");
     return { ok: true, data: undefined };
   } catch (error) {
     return {
@@ -64,7 +64,7 @@ export async function addStepsAction(input: unknown): Promise<ActionResult> {
       create: { userId: user.id, date, steps: data.steps },
       update: { steps: data.steps },
     });
-    revalidateStudio();
+    revalidateStudio("/progress", "/dashboard", "/analytics", "/calendar", "/goals");
     return { ok: true, data: undefined };
   } catch (error) {
     return { ok: false, error: toActionError(error, "Unable to save steps.") };

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import {
   addMeasurementAction,
   addStepsAction,
@@ -12,21 +12,25 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 export function ProgressForms({ today }: { today: string }) {
-  const [pending, startTransition] = useTransition();
+  const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
-  function run(action: (input: unknown) => Promise<{ ok: true } | { ok: false; error: string }>, input: unknown, success: string) {
-    startTransition(async () => {
-      const result = await action(input);
-      if (!result.ok) {
-        setError(result.error);
-        setMessage(null);
-        return;
-      }
-      setError(null);
-      setMessage(success);
-    });
+  async function run(
+    action: (input: unknown) => Promise<{ ok: true } | { ok: false; error: string }>,
+    input: unknown,
+    success: string
+  ) {
+    setPending(true);
+    const result = await action(input);
+    setPending(false);
+    if (!result.ok) {
+      setError(result.error);
+      setMessage(null);
+      return;
+    }
+    setError(null);
+    setMessage(success);
   }
 
   return (
@@ -38,9 +42,9 @@ export function ProgressForms({ today }: { today: string }) {
             run(
               addWeightAction,
               {
-                date: formData.get("weightDate"),
-                weight: formData.get("weight"),
-                notes: formData.get("notes") || undefined,
+                date: String(formData.get("weightDate") ?? ""),
+                weight: Number(formData.get("weight")),
+                notes: String(formData.get("notes") || "") || undefined,
               },
               "Weight saved."
             )
@@ -56,13 +60,15 @@ export function ProgressForms({ today }: { today: string }) {
           </div>
           <div className="space-y-2">
             <Label htmlFor="weight">Weight</Label>
-            <Input id="weight" name="weight" type="number" min="50" step="0.1" required />
+            <Input id="weight" name="weight" type="number" min="1" step="0.1" required />
           </div>
           <div className="space-y-2">
             <Label htmlFor="notes">Notes</Label>
             <Input id="notes" name="notes" placeholder="Morning, after travel..." />
           </div>
-          <Button disabled={pending}>Save Weight</Button>
+          <Button type="submit" disabled={pending}>
+            {pending ? "Saving..." : "Save Weight"}
+          </Button>
         </form>
       </Card>
       <Card>
@@ -72,10 +78,10 @@ export function ProgressForms({ today }: { today: string }) {
             run(
               addMeasurementAction,
               {
-                date: formData.get("measureDate"),
-                name: formData.get("name"),
-                value: formData.get("value"),
-                unit: formData.get("unit") || "in",
+                date: String(formData.get("measureDate") ?? ""),
+                name: String(formData.get("name") ?? ""),
+                value: Number(formData.get("value")),
+                unit: String(formData.get("unit") || "in"),
               },
               "Measurement saved."
             )
@@ -103,8 +109,8 @@ export function ProgressForms({ today }: { today: string }) {
               <Input id="unit" name="unit" defaultValue="in" />
             </div>
           </div>
-          <Button disabled={pending} variant="outline">
-            Save Measurement
+          <Button type="submit" variant="outline" disabled={pending}>
+            {pending ? "Saving..." : "Save Measurement"}
           </Button>
         </form>
       </Card>
@@ -114,7 +120,10 @@ export function ProgressForms({ today }: { today: string }) {
           action={(formData) =>
             run(
               addStepsAction,
-              { date: formData.get("stepDate"), steps: formData.get("steps") },
+              {
+                date: String(formData.get("stepDate") ?? ""),
+                steps: Number(formData.get("steps")),
+              },
               "Steps saved."
             )
           }
@@ -131,8 +140,8 @@ export function ProgressForms({ today }: { today: string }) {
             <Label htmlFor="steps">Steps</Label>
             <Input id="steps" name="steps" type="number" min="0" required />
           </div>
-          <Button disabled={pending} variant="outline">
-            Save Steps
+          <Button type="submit" variant="outline" disabled={pending}>
+            {pending ? "Saving..." : "Save Steps"}
           </Button>
         </form>
       </Card>

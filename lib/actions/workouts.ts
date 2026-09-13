@@ -13,7 +13,7 @@ import { workoutElapsedSeconds } from "@/lib/workout-metrics";
 import { startWorkoutSchema, workoutIdSchema } from "@/lib/validations/workout";
 
 function refreshWorkout(workoutId: string) {
-  revalidateStudio(workoutId);
+  revalidateStudio("/dashboard", "/workout", `/workout/${workoutId}`, "/calendar", "/history", "/analytics");
 }
 
 async function ownedWorkout(userId: string, workoutId: string) {
@@ -227,7 +227,7 @@ export async function finishWorkoutAction(
       }
 
       return count;
-    });
+    }, { timeout: 20000, maxWait: 10000 });
 
     refreshWorkout(workoutId);
     return { ok: true, data: { personalRecords: createdRecords } };

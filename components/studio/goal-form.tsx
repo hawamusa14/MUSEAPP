@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import { addGoalAction } from "@/lib/actions/goals";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,21 +8,28 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 export function GoalForm() {
-  const [pending, startTransition] = useTransition();
+  const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
 
-  function save(formData: FormData) {
-    startTransition(async () => {
-      const result = await addGoalAction({
-        type: formData.get("type"),
-        title: formData.get("title"),
-        targetValue: formData.get("targetValue") || undefined,
-        unit: formData.get("unit") || undefined,
-        targetDate: formData.get("targetDate") || undefined,
-      });
-      if (!result.ok) setError(result.error);
-      else setError(null);
+  async function save(formData: FormData) {
+    setPending(true);
+    setError(null);
+    const result = await addGoalAction({
+      type: String(formData.get("type") ?? ""),
+      title: String(formData.get("title") ?? ""),
+      targetValue: formData.get("targetValue")
+        ? Number(formData.get("targetValue"))
+        : undefined,
+      unit: String(formData.get("unit") || "") || undefined,
+      targetDate: String(formData.get("targetDate") || "") || undefined,
     });
+    setPending(false);
+    if (!result.ok) {
+      setError(result.error);
+      return;
+    }
+    setMessage("Goal saved.");
   }
 
   return (
@@ -68,7 +75,10 @@ export function GoalForm() {
           </div>
         </div>
         {error ? <p className="text-sm text-destructive">{error}</p> : null}
-        <Button disabled={pending}>{pending ? "Saving..." : "Add Goal"}</Button>
+        {message ? <p className="text-sm text-muted-foreground">{message}</p> : null}
+        <Button type="submit" disabled={pending}>
+          {pending ? "Saving..." : "Add Goal"}
+        </Button>
       </form>
     </Card>
   );
