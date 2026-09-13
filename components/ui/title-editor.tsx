@@ -8,11 +8,13 @@ import { cn } from "@/lib/utils";
 export function TitleEditor({
   value,
   heading,
+  className,
   disabled,
   onSave,
 }: {
   value: string;
   heading?: boolean;
+  className?: string;
   disabled?: boolean;
   onSave: (title: string) => Promise<{ ok: true; data?: unknown } | { ok: false; error: string }>;
 }) {
@@ -31,7 +33,7 @@ export function TitleEditor({
   if (!editing) {
     return (
       <div className="flex flex-wrap items-center gap-2">
-        <Tag className={cn(heading ? "mt-1 font-heading text-4xl" : "font-medium")}>{saved}</Tag>
+        <Tag className={cn(heading ? "mt-1 font-heading text-4xl" : "font-medium", className)}>{saved}</Tag>
         <Button
           type="button"
           variant="ghost"

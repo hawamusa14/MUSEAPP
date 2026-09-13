@@ -83,3 +83,8 @@ export const removeWorkoutExerciseSchema = z.object({
   workoutId: z.string().min(1),
   workoutExerciseId: z.string().min(1),
 });
+
+export const renameWorkoutExerciseSchema = z.object({
+  workoutExerciseId: z.string().min(1),
+  name: z.string().trim().min(1, "Give this exercise a name.").max(100),
+});

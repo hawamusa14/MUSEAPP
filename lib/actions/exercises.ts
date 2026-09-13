@@ -9,8 +9,10 @@ import {
   addExerciseSchema,
   createCustomExerciseSchema,
   removeWorkoutExerciseSchema,
+  renameWorkoutExerciseSchema,
   searchExercisesSchema,
 } from "@/lib/validations/workout";
+import { revalidateStudio } from "@/lib/revalidate";
 
 function slugify(value: string) {
   return value
@@ -183,3 +185,69 @@ export async function removeWorkoutExerciseAction(
     };
   }
 }
+
+export async function renameWorkoutExerciseAction(input: unknown): Promise<ActionResult> {
+  try {
+    const user = await requireUser();
+    const data = renameWorkoutExerciseSchema.parse(input);
+    const row = await prisma.workoutExercise.findFirst({
+      where: {
+        id: data.workoutExerciseId,
+        workout: { userId: user.id },
+      },
+      include: { exercise: true, workout: true },
+    });
+    if (!row) throw new ActionError("That exercise is not in this workout.");
+
+    const current = row.exercise;
+    const ownedCustom = Boolean(current.userId === user.id && current.isCustom);
+    if (ownedCustom) {
+      await prisma.exercise.update({
+        where: { id: current.id },
+        data: {
+          name: data.name,
+          slug: `${slugify(data.name)}-${user.id.slice(-6)}-${current.id.slice(-4)}`,
+        },
+      });
+    } else {
+      const match = await prisma.exercise.findFirst({
+        where: {
+          userId: user.id,
+          name: { equals: data.name, mode: "insensitive" },
+        },
+      });
+      const next =
+        match ||
+        (await prisma.exercise.create({
+          data: {
+            name: data.name,
+            slug: `${slugify(data.name)}-${user.id.slice(-6)}-${row.id.slice(-4)}`,
+            categoryId: current.categoryId,
+            equipment: current.equipment,
+            userId: user.id,
+            isCustom: true,
+          },
+        }));
+      await prisma.workoutExercise.update({
+        where: { id: row.id },
+        data: { exerciseId: next.id },
+      });
+    }
+
+    revalidateStudio(
+      "/workout",
+      `/workout/${row.workoutId}`,
+      "/history",
+      "/calendar",
+      "/analytics",
+      "/dashboard"
+    );
+    return { ok: true, data: undefined };
+  } catch (error) {
+    return {
+      ok: false,
+      error: toActionError(error, "Unable to rename that exercise."),
+    };
+  }
+}
+

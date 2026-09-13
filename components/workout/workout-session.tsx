@@ -9,12 +9,15 @@ import {
   renameWorkoutAction,
 } from "@/lib/actions/workouts";
 import { addSetAction } from "@/lib/actions/sets";
-import { removeWorkoutExerciseAction } from "@/lib/actions/exercises";
+import {
+  removeWorkoutExerciseAction,
+  renameWorkoutExerciseAction,
+} from "@/lib/actions/exercises";
 import { formatShortDate } from "@/lib/dates";
 import { muscleGroupLabel } from "@/lib/muscle-groups";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardDescription, CardHeader } from "@/components/ui/card";
 import { ExercisePicker } from "@/components/workout/exercise-picker";
 import { RestTimer } from "@/components/workout/rest-timer";
 import { isWarmupSet, SetRow } from "@/components/workout/set-row";
@@ -98,7 +101,18 @@ export function WorkoutSession({
           <Card key={item.id}>
             <CardHeader className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
               <div>
-                <CardTitle>{item.exercise.name}</CardTitle>
+                <TitleEditor
+                  value={item.exercise.name}
+                  className="font-heading text-xl tracking-tight"
+                  onSave={async (name) => {
+                    const result = await renameWorkoutExerciseAction({
+                      workoutExerciseId: item.id,
+                      name,
+                    });
+                    if (result.ok) router.refresh();
+                    return result;
+                  }}
+                />
                 <CardDescription>
                   {item.exercise.category.name}
                   {item.exercise.equipment ? ` · ${item.exercise.equipment}` : ""}
