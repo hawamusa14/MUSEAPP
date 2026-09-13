@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { getHistoryTimeline } from "@/lib/data/history";
 import { Card } from "@/components/ui/card";
+import { NotesImport } from "@/components/workout/notes-import";
 
 export default async function HistoryPage() {
   const user = await requireUser();
@@ -16,6 +17,9 @@ export default async function HistoryPage() {
           Workouts, meals, steps, photos, and notes from the same records used everywhere else.
         </p>
       </header>
+
+      <NotesImport defaultYear={new Date().getFullYear()} />
+
       {items.length === 0 ? (
         <p className="text-sm text-muted-foreground">Nothing logged yet.</p>
       ) : (

@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { SaveTemplateButton } from "@/components/calendar/save-template-button";
+import { NotesImport } from "@/components/workout/notes-import";
 
 export default async function WorkoutPage() {
   const user = await requireUser();
@@ -79,6 +80,8 @@ export default async function WorkoutPage() {
       ) : null}
 
       <StartWorkoutForm today={toInputDate()} />
+
+      <NotesImport defaultYear={new Date().getFullYear()} />
 
       {drafts.length > 0 ? (
         <section className="space-y-3">
