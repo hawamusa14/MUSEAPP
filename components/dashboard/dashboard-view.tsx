@@ -46,6 +46,13 @@ export function DashboardView({
     (plan) => plan.status === "PLANNED" && canStartPlannedWorkout(plan.kind)
   );
   const nextPlan = todaysOpenPlan ?? tomorrowPlans[0];
+  const todayPlan = todayPlans[0];
+  const todayTitle = todayPlan?.title || workout?.title || "Open day";
+  const todayDetail = todayPlan
+    ? formatTimeRange(todayPlan.startTime, todayPlan.endTime) || "Planned on your calendar"
+    : workout
+      ? "Logged in the tracker"
+      : "Nothing planned yet";
 
   return (
     <div className="muse-page mx-auto max-w-6xl space-y-8">
@@ -73,14 +80,10 @@ export function DashboardView({
         <Card>
           <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Today</p>
           <p className="mt-2 font-heading text-2xl">
-            {todayPlans[0]?.title ?? (workout ? workout.title : "Open day")}
+            {todayTitle}
           </p>
           <p className="mt-1 text-sm text-muted-foreground">
-            {todayPlans[0]
-              ? formatTimeRange(todayPlans[0].startTime, todayPlans[0].endTime) ?? "Planned on your calendar"
-              : workout
-                ? "Logged in the tracker"
-                : "Nothing planned yet"}
+            {todayDetail}
           </p>
         </Card>
         <Card>

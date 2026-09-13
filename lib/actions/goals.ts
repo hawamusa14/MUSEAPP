@@ -33,7 +33,7 @@ export async function addGoalAction(input: unknown): Promise<ActionResult> {
       const daily = await prisma.dailyNutrition.findFirst({
         where: { userId: user.id, date: today },
       });
-      startValue = data.type === "PROTEIN" ? daily?.protein ?? 0 : daily?.calories ?? 0;
+      startValue = data.type === "PROTEIN" ? daily?.protein || 0 : daily?.calories || 0;
     } else if (data.type === "WORKOUT_FREQUENCY") {
       startValue = await prisma.workout.count({
         where: { userId: user.id, status: "COMPLETED", date: { gte: weekStart } },

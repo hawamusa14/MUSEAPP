@@ -267,6 +267,10 @@ export async function getDayHub(userId: string, day: string): Promise<DayDetailD
     ...plans.map((plan) => plan.notes).filter(Boolean),
     ...journal.flatMap((item) => [item.entry, item.workoutNotes].filter(Boolean)),
   ] as string[];
+  const cardioCalories = cardio.reduce(
+    (sum, item) => sum + (item.calories ?? 0),
+    0
+  );
 
   return {
     date: day,
@@ -279,7 +283,12 @@ export async function getDayHub(userId: string, day: string): Promise<DayDetailD
     })),
     steps: steps?.steps ?? null,
     stepGoal: settings?.stepGoal ?? 8000,
-    activeCalories: steps?.calories ?? cardio.reduce((sum, item) => sum + (item.calories ?? 0), 0) || null,
+    activeCalories:
+      steps?.calories != null
+        ? steps.calories
+        : cardioCalories === 0
+          ? null
+          : cardioCalories,
     cardio: cardio.map((item) => ({ type: item.type, durationMin: item.durationMin })),
     nutrition: daily
       ? {
@@ -440,12 +449,19 @@ export async function getCalendarHub(
       steps: todaySteps?.steps ?? 0,
       stepGoal: settings?.stepGoal ?? 8000,
       protein: todayNutrition?.protein ?? 0,
-      proteinTarget:
-        settings?.proteinTarget ??
-        (frequencyGoal?.type === "PROTEIN" ? frequencyGoal.targetValue : null),
+      proteinTarget: proteinGoalTarget(settings?.proteinTarget, frequencyGoal),
     },
     today: dateKey(today),
   };
+}
+
+function proteinGoalTarget(
+  settingsTarget: number | null | undefined,
+  frequencyGoal: { type: string; targetValue: number } | null
+) {
+  if (settingsTarget != null) return settingsTarget;
+  if (frequencyGoal?.type === "PROTEIN") return frequencyGoal.targetValue;
+  return null;
 }
 
 function startOfCurrentWeek(value: Date) {
