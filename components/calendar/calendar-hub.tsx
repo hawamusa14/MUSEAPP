@@ -272,11 +272,15 @@ export function CalendarHub({ data }: { data: CalendarHubDTO }) {
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>Templates</CardTitle>
-            <CardDescription>Save a favorite session, then drop it onto any date.</CardDescription>
+            <CardTitle>Saved templates</CardTitle>
+            <CardDescription>
+              Keep the workouts you repeat. Add one to {prettyDate(data.selectedDay)} without typing the exercises again.
+            </CardDescription>
           </CardHeader>
           {data.templates.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Save any planned workout as a template.</p>
+            <p className="text-sm text-muted-foreground">
+              Save a finished workout or a planned session as a template, then paste it onto any day.
+            </p>
           ) : (
             <ul className="space-y-3">
               {data.templates.map((template) => (
@@ -284,7 +288,9 @@ export function CalendarHub({ data }: { data: CalendarHubDTO }) {
                   <div>
                     <p className="font-medium">{template.title}</p>
                     <p className="text-sm text-muted-foreground">
-                      {template.exercises.length} exercises
+                      {template.exercises.length
+                        ? template.exercises.map((item) => item.name).join(", ")
+                        : "No exercises yet"}
                     </p>
                   </div>
                   <div className="flex gap-2">
@@ -295,11 +301,11 @@ export function CalendarHub({ data }: { data: CalendarHubDTO }) {
                       onClick={() =>
                         run(
                           () => applyTemplateAction({ templateId: template.id, date: data.selectedDay }),
-                          "Template added"
+                          "Added to the selected day"
                         )
                       }
                     >
-                      Add
+                      Add to day
                     </Button>
                     <Button
                       size="sm"
@@ -367,6 +373,7 @@ export function CalendarHub({ data }: { data: CalendarHubDTO }) {
           key={editing?.id ?? `new-${presetCategoryId}-${data.selectedDay}`}
           date={data.selectedDay}
           plan={editing}
+          templates={data.templates}
           presetCategoryId={presetCategoryId}
           onClose={() => {
             setFormOpen(false);
@@ -437,7 +444,7 @@ function GoalPulse({
   return (
     <Card>
       <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">{label}</p>
-      <p className="mt-2 font-heading text-2xl tabular-nums">{value}</p>
+      <p className="mt-2 font-sans text-2xl tabular-nums">{value}</p>
       {hint ? <p className="text-sm text-muted-foreground">{hint}</p> : null}
       <Progress value={ratio} label={label} className="mt-3" />
     </Card>

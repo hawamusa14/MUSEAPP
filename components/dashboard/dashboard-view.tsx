@@ -88,7 +88,7 @@ export function DashboardView({
         </Card>
         <Card>
           <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Accomplished</p>
-          <p className="mt-2 font-heading text-2xl tabular-nums">
+          <p className="mt-2 font-sans text-2xl tabular-nums">
             {workoutsTarget ? `${weekWorkouts} / ${workoutsTarget}` : weekWorkouts} this week
           </p>
           <Progress

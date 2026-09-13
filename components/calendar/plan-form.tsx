@@ -4,7 +4,7 @@ import { useEffect, useState, useTransition } from "react";
 import type { Exercise, ExerciseCategory, MuscleGroup, PlanKind } from "@prisma/client";
 import { searchExercisesAction } from "@/lib/actions/exercises";
 import { upsertPlanAction } from "@/lib/actions/plans";
-import { PLAN_CATEGORIES, inferCategoryId, type PlanDTO } from "@/lib/planning";
+import { PLAN_CATEGORIES, inferCategoryId, type PlanDTO, type TemplateDTO } from "@/lib/planning";
 import { MUSCLE_GROUP_OPTIONS } from "@/lib/muscle-groups";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,11 +23,13 @@ type DraftExercise = {
 export function PlanForm({
   date,
   plan,
+  templates = [],
   presetCategoryId = "FULL_BODY",
   onClose,
 }: {
   date: string;
   plan?: PlanDTO | null;
+  templates?: TemplateDTO[];
   presetCategoryId?: string;
   onClose: () => void;
 }) {
@@ -76,6 +78,26 @@ export function PlanForm({
     }, 180);
     return () => window.clearTimeout(handle);
   }, [query]);
+
+  function applySavedTemplate(templateId: string) {
+    const template = templates.find((item) => item.id === templateId);
+    if (!template) return;
+    const nextCategory = inferCategoryId(template.kind, template.muscleGroups);
+    setTitle(template.title);
+    setCategoryId(nextCategory);
+    setGroups(template.muscleGroups);
+    setNotes(template.notes || "");
+    setExercises(
+      template.exercises.map((item) => ({
+        exerciseId: item.exerciseId,
+        name: item.name,
+        targetSets: item.targetSets ? String(item.targetSets) : "3",
+        targetReps: item.targetReps ? String(item.targetReps) : "10",
+        targetWeight: item.targetWeight != null ? String(item.targetWeight) : "",
+        restSeconds: item.restSeconds != null ? String(item.restSeconds) : "90",
+      }))
+    );
+  }
 
   function chooseCategory(id: string) {
     const category = PLAN_CATEGORIES.find((item) => item.id === id);
@@ -158,6 +180,27 @@ export function PlanForm({
           </Button>
         </div>
         <div className="space-y-5 overflow-y-auto pr-1">
+          {!plan && templates.length > 0 ? (
+            <div className="space-y-2">
+              <Label htmlFor="plan-template">Paste a saved template</Label>
+              <select
+                id="plan-template"
+                defaultValue=""
+                onChange={(event) => {
+                  if (event.target.value) applySavedTemplate(event.target.value);
+                }}
+                className="h-11 w-full rounded-xl border border-input bg-background px-3"
+              >
+                <option value="">Start blank, or choose a saved workout</option>
+                {templates.map((template) => (
+                  <option key={template.id} value={template.id}>
+                    {template.title}
+                    {template.exercises.length ? ` · ${template.exercises.length} exercises` : ""}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ) : null}
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="plan-title">Workout name</Label>

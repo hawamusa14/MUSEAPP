@@ -18,6 +18,7 @@ import {
   planIdSchema,
   quickCreatePlanSchema,
   saveTemplateSchema,
+  saveWorkoutTemplateSchema,
   templateIdSchema,
   upsertPlanSchema,
   upsertRecurringSchema,
@@ -413,6 +414,66 @@ export async function savePlanAsTemplateAction(
     return {
       ok: false,
       error: toActionError(error, "Unable to save that template."),
+    };
+  }
+}
+
+
+export async function saveWorkoutAsTemplateAction(
+  input: unknown
+): Promise<ActionResult<{ templateId: string }>> {
+  try {
+    const user = await requireUser();
+    const data = saveWorkoutTemplateSchema.parse(input);
+    const workout = await prisma.workout.findFirst({
+      where: { id: data.workoutId, userId: user.id },
+      include: {
+        exercises: {
+          orderBy: { order: "asc" },
+          include: { sets: { orderBy: { order: "asc" } } },
+        },
+      },
+    });
+    if (!workout) throw new ActionError("We could not find that workout.");
+    if (workout.exercises.length === 0) {
+      throw new ActionError("Add exercises before saving this as a template.");
+    }
+    const kind = workout.muscleGroups.includes("CARDIO") && workout.muscleGroups.length === 1
+      ? "CARDIO"
+      : "STRENGTH";
+    const template = await prisma.workoutTemplate.create({
+      data: {
+        userId: user.id,
+        title: data.title?.trim() || workout.title,
+        kind,
+        muscleGroups: workout.muscleGroups,
+        notes: workout.notes,
+        exercises: {
+          create: workout.exercises.map((item) => ({
+            exerciseId: item.exerciseId,
+            order: item.order,
+            notes: item.notes,
+            sets: {
+              create:
+                item.sets.length > 0
+                  ? item.sets.map((set) => ({
+                      order: set.order,
+                      targetWeight: set.weight,
+                      targetReps: set.reps,
+                      restSeconds: set.restSeconds,
+                    }))
+                  : [{ order: 1, targetWeight: null, targetReps: 10, restSeconds: 90 }],
+            },
+          })),
+        },
+      },
+    });
+    refreshPlans(workout.id);
+    return { ok: true, data: { templateId: template.id } };
+  } catch (error) {
+    return {
+      ok: false,
+      error: toActionError(error, "Unable to save that workout as a template."),
     };
   }
 }

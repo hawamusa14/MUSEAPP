@@ -80,6 +80,11 @@ export const saveTemplateSchema = z.object({
   title: z.string().trim().max(80).optional(),
 });
 
+export const saveWorkoutTemplateSchema = z.object({
+  workoutId: z.string().min(1),
+  title: z.string().trim().max(80).optional(),
+});
+
 export const upsertRecurringSchema = z.object({
   id: z.string().min(1).optional(),
   title: z.string().trim().min(1).max(80),

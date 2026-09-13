@@ -14,6 +14,7 @@ import { StartWorkoutForm } from "@/components/workout/start-workout-form";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { SaveTemplateButton } from "@/components/calendar/save-template-button";
 
 export default async function WorkoutPage() {
   const user = await requireUser();
@@ -109,21 +110,26 @@ export default async function WorkoutPage() {
           </p>
         ) : (
           recent.map((workout) => (
-            <Link key={workout.id} href={`/workout/${workout.id}`} className="block">
-              <Card>
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <p className="font-medium">{workout.title}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {formatShortDate(workout.date)} ·{" "}
-                      {formatDuration(workout.durationSeconds ?? 0)} ·{" "}
-                      {workout.exercises.length} exercises
-                    </p>
-                  </div>
-                  <span className="text-sm text-primary">View</span>
+            <Card key={workout.id}>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <Link href={`/workout/${workout.id}`} className="min-w-0">
+                  <p className="font-medium">{workout.title}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {formatShortDate(workout.date)} ·{" "}
+                    {formatDuration(workout.durationSeconds ?? 0)} ·{" "}
+                    {workout.exercises.length} exercises
+                  </p>
+                </Link>
+                <div className="flex flex-wrap items-center gap-2">
+                  {workout.exercises.length > 0 ? (
+                    <SaveTemplateButton workoutId={workout.id} title={workout.title} />
+                  ) : null}
+                  <Button variant="ghost" render={<Link href={`/workout/${workout.id}`} />}>
+                    View
+                  </Button>
                 </div>
-              </Card>
-            </Link>
+              </div>
+            </Card>
           ))
         )}
       </section>
